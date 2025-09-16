@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import { getUserById } from "@/app/actions/getUserById";
 import { getAppointmentsByUser } from "@/app/actions/getAppointmentsByUser";
 
@@ -23,6 +23,7 @@ export async function POST(
     const browser = await puppeteer.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      channel: "chrome",
     });
 
     const page = await browser.newPage();

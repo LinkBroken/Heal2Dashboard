@@ -15,6 +15,11 @@ import { mockStats, mockNotifications } from "./data/mockData";
 import { TrendingUp, Users, Activity, Shield } from "lucide-react";
 
 export default function Dashboard() {
+  const registered = localStorage.getItem("registered");
+  if (registered) {
+    return;
+  }
+
   const quickStats = [
     {
       title: "System Health",
@@ -45,7 +50,6 @@ export default function Dashboard() {
       bgColor: "#eff6ff",
     },
   ];
-
   return (
     <DashboardLayout>
       <Container maxWidth="xl">

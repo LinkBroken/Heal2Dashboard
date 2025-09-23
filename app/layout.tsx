@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import { MuiThemeProvider } from "./components/MuiThemeProvider";
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -22,17 +22,8 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-  Google,
-  Facebook,
-  Apple,
-  Lock,
-  Person,
-} from "@mui/icons-material";
-import { login } from "../actions/login";
-import Router from "next/router";
+import { Visibility, VisibilityOff, Lock, Person } from "@mui/icons-material";
+import { login } from "@/app/actions/login";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);

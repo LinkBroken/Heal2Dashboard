@@ -15,11 +15,6 @@ import { mockStats, mockNotifications } from "./data/mockData";
 import { TrendingUp, Users, Activity, Shield } from "lucide-react";
 
 export default function Dashboard() {
-  const registered = localStorage.getItem("registered");
-  if (registered) {
-    return;
-  }
-
   const quickStats = [
     {
       title: "System Health",

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 import { getUserById } from "@/app/actions/getUserById";
 import { getAppointmentsByUser } from "@/app/actions/getAppointmentsByUser";
-import { executablePath } from "@sparticuz/chrome-aws-lambda";
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -23,7 +22,7 @@ export async function POST(
     const browser = await puppeteer.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      executablePath: await executablePath,
+      channel: "chrome-beta",
     });
 
     const page = await browser.newPage();

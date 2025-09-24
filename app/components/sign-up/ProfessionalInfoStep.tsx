@@ -18,6 +18,8 @@ import {
   Link,
   Paper,
   Alert,
+  Button,
+  Input,
 } from "@mui/material";
 import {
   Work,
@@ -25,8 +27,11 @@ import {
   Star,
   Assignment,
   LocalHospital,
+  HideImageRounded,
 } from "@mui/icons-material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
+import { CloudUploadIcon } from "lucide-react";
+import styled from "@emotion/styled";
 
 const SPECIALIZATIONS = [
   "General Practice",
@@ -60,8 +65,27 @@ const LICENSE_PROGRAMS = [
   "Other",
 ];
 
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
+
 export default function ProfessionalInfoStep() {
-  const { formData, errors, updateFormData } = useDoctorSignupStore();
+  const { formData, errors, file, updateFormData, setFile, session } =
+    useDoctorSignupStore();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
 
   const [showOtherLicense, setShowOtherLicense] = useState(false);
 
@@ -108,7 +132,10 @@ export default function ProfessionalInfoStep() {
               onChange={(e) => {
                 updateFormData({ doctorType: e.target.value });
                 if (e.target.value === "gp") {
-                  updateFormData({ specialization: "General Practice" });
+                  updateFormData({
+                    specialization: "General",
+                    specialty: "General",
+                  });
                 }
               }}
               sx={{
@@ -260,14 +287,17 @@ export default function ProfessionalInfoStep() {
               }
             }}
             error={!!errors.yearsOfExperience}
-            helperText={errors.yearsOfExperience || "Maximum 50 years"}
+            helperText={
+              errors.yearsOfExperience ||
+              "If more than 15 years, please enter 15"
+            }
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <Star sx={{ color: "action.active" }} />
                 </InputAdornment>
               ),
-              inputProps: { min: 0, max: 50 },
+              inputProps: { min: 0, max: 15 },
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -282,7 +312,30 @@ export default function ProfessionalInfoStep() {
             }}
           />
         </Grid>
+        {/* Medical License */}
+        {/* <Grid item xs={12}>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: 600, color: "#1a1a1a", mb: 2 }}
+          >
+            Upload Your Medical License
+          </Typography>
 
+          <Button
+            component="label"
+            variant="contained"
+            startIcon={<CloudUploadIcon />}
+          >
+            {file ? file.name : "Upload file"}
+            <input
+              hidden
+              type="file"
+              accept="pdf/*"
+              onChange={handleFileChange}
+            />
+            <VisuallyHiddenInput />
+          </Button>
+        </Grid> */}
         {/* Skills */}
         <Grid item xs={12}>
           <TextField

@@ -39,6 +39,46 @@ const steps = [
   "Professional Details",
 ];
 
+// const handleUpload = async (
+//   file: File,
+//   userId: string,
+//   role: string,
+//   token: string
+// ) => {
+//   if (!file) return;
+
+//   const formDataToSend = new FormData();
+//   console.log(file);
+//   formDataToSend.append("file", {
+//     uri: file.webkitRelativePath,
+//     name: "profile.png",
+//     type: "image/png",
+//   });
+//   formDataToSend.append("id", userId);
+//   formDataToSend.append("type", role);
+
+//   try {
+//     const response = await fetch(
+//       "https://heal2gether-backend.vercel.app/api/upload/formData", // Note: fixed typo from formDate
+//       {
+//         method: "POST",
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           // Let React Native set Content-Type automatically
+//         },
+//         body: formDataToSend,
+//       }
+//     );
+
+//     const data = await response.json();
+//     console.log(data);
+//     if (!response.ok) throw new Error(data.message || "Upload failed");
+//     // Alert.alert("Success", "Profile image uploaded successfully");
+//   } catch (error) {
+//     console.error("Upload failed:", error);
+//     console.error("Error", "Failed to upload profile image");
+//   }
+// };
 export default function DoctorSignupPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -68,6 +108,7 @@ export default function DoctorSignupPage() {
     formData,
     resetForm,
     session,
+    file,
   } = useDoctorSignupStore();
 
   const handleNext = () => {
@@ -122,8 +163,8 @@ export default function DoctorSignupPage() {
         .insert(profileData)
         .eq("id", user?.id);
 
-      console.log(error);
-      if (error) {
+      console.log(error?.code);
+      if (error?.code) {
         console.error("Registration error:", error);
         alert("Registration failed. Please try again.");
         return;
@@ -131,7 +172,7 @@ export default function DoctorSignupPage() {
       const doctorData = {
         id: user?.id,
         name: `${formData.firstName} ${formData.lastName}`,
-        specialty: formData.specialization,
+        specialty: formData.specialization || "General",
         doctor_type: formData.doctorType,
         location: formData.address,
         phone: `${
@@ -149,6 +190,7 @@ export default function DoctorSignupPage() {
         skills: formData.skills,
         emergency_number: formData.emergencyNumber,
       };
+      // console.log(id);
       const { error: doctorError } = await supabase
         .from("doctors")
         .insert(doctorData)
@@ -159,24 +201,28 @@ export default function DoctorSignupPage() {
         alert("Registration failed. Please try again.");
         return;
       }
-      // Here you would typically:
-      // 1. Save the doctor's profile to your database
-      // 2. Set up their professional account
-      // 3. Redirect to dashboard or success page
+      // if (file) {
+      //   await handleUpload(
+      //     file,
+      //     user?.id ?? "",
+      //     "doctor",
+      //     session?.access_token ?? ""
+      //   );
+      // }
 
-      alert("Registration completed successfully!");
       resetForm();
     } catch (error) {
       console.log(error);
       console.error("Registration error:", error);
     } finally {
       localStorage.setItem("registered", "true");
+      alert("Registration completed successfully!");
+
       await supabase.auth.signOut();
       setLoading(false);
     }
   };
 
-  // Auto-advance from OTP step when verified
   React.useEffect(() => {
     if (currentStep === 2 && isEmailVerified) {
       setTimeout(() => {
@@ -202,11 +248,12 @@ export default function DoctorSignupPage() {
       default:
         return <EmailStep />;
     }
+    // return <ContactInfoStep />;
   };
 
   const canProceed = () => {
     if (currentStep === 2 && isEmailVerified && session) {
-      return true; // Auto-advance will handle this
+      return true;
     }
     return validateStep(currentStep);
   };

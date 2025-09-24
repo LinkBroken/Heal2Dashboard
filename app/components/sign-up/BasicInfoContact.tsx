@@ -175,7 +175,9 @@ export default function BasicInfoStep() {
             }}
             InputProps={{
               "aria-valuemax": new Date().getFullYear() - 18,
-
+              inputProps: {
+                max: "2005-01-01",
+              },
               startAdornment: (
                 <InputAdornment position="start">
                   <DateRange

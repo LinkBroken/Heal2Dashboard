@@ -29,6 +29,7 @@ interface FormData {
   countryCode?: string;
   emergencyNumber?: string;
   languages?: string[];
+  specialty?: string;
 }
 interface Error {
   [key: string]: string;
@@ -52,6 +53,8 @@ interface DoctorSignupStore {
   resetForm: () => void;
   session: Session | undefined;
   setSession: (session: Session) => void;
+  file: File | null;
+  setFile: (file: File | null) => void;
 }
 
 const initialFormData: FormData = {
@@ -92,6 +95,8 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
   setOtpSent: (sent) => set({ otpSent: sent }),
   setSession: (session) => set({ session }),
   session: undefined,
+  file: null,
+  setFile: (file) => set({ file }),
   updateFormData: (data) =>
     set((state) => ({
       formData: { ...state.formData, ...data },

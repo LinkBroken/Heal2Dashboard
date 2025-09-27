@@ -23,6 +23,7 @@ import OTPStep from "@/app/components/sign-up/OTPStep";
 import BasicInfoStep from "@/app/components/sign-up/BasicInfoContact";
 import ContactInfoStep from "@/app/components/sign-up/ContactInfoStep";
 import ProfessionalInfoStep from "@/app/components/sign-up/ProfessionalInfoStep";
+import RegistrationSuccessModal from "../components/sign-up/SuccessModal";
 import {
   CheckCircle,
   ArrowBack,
@@ -34,10 +35,7 @@ import {
   UploadDoctorCertificate,
   uploadDoctorProfile,
 } from "../actions/uploadProfile";
-import { useFormValidation } from "../store/useFormValidation";
-import router from "next/router";
 import AlreadyRegistered from "./AlreadyRegistered";
-import RegistrationSuccessModal from "../components/sign-up/SuccessModal";
 
 const steps = [
   "Email Verification",
@@ -55,6 +53,7 @@ export default function DoctorSignupPage() {
   );
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+
   useEffect(() => {
     async function getSupabase() {
       const supabase = await createClient(
@@ -159,7 +158,9 @@ export default function DoctorSignupPage() {
           experience: formData.experience,
           address: formData.address,
           status: "pending",
-          license_number: formData.licenseNumber,
+          license_number: formData.licenseNumber
+            ? formData.licenseNumber
+            : formData.specialty,
           gender: formData.gender?.toLowerCase(),
           profile_id: user?.id,
           skills: formData.skills,
@@ -208,8 +209,7 @@ export default function DoctorSignupPage() {
       localStorage.setItem("registered", "true");
       setSuccessModalOpen(true);
       await supabase.auth.signOut();
-      router.replace("/");
-      setLoading(false);
+      window.location.replace("/register");
     }
   };
 
@@ -234,6 +234,10 @@ export default function DoctorSignupPage() {
         <AlreadyRegistered
           onLoginClick={() => alert("Login")}
           onSupportClick={() => window.open("mailto:heal2gether.app@gmail.com")}
+          onRegisterClick={() => {
+            localStorage.removeItem("registered");
+            window.location.reload();
+          }}
         />
       );
     }
@@ -255,7 +259,11 @@ export default function DoctorSignupPage() {
   };
 
   const canProceed = () => {
-    if (currentStep === 2 && isEmailVerified && session) {
+    if (
+      (currentStep === 2 || currentStep === 1) &&
+      isEmailVerified &&
+      session
+    ) {
       return true;
     }
     return validateStep(currentStep);

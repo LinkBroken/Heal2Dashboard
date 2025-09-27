@@ -61,6 +61,8 @@ interface DoctorSignupStore {
   setDocument: (document: File | null) => void;
   profileImage: File | null;
   setProfileImage: (profileImage: File | null) => void;
+  isPhoneNumbeValid: boolean;
+  setIsPhoneNumbeValid: (valid: boolean) => void;
 }
 
 const initialFormData: FormData = {
@@ -98,6 +100,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
   error: "",
   isEmailVerified: false,
   otpSent: false,
+  isPhoneNumbeValid: false,
   formData: initialFormData,
   errors: {},
   setCurrentStep: (step) => set({ currentStep: step }),
@@ -105,6 +108,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
   setError: (error) => set({ error }),
   setEmailVerified: (verified) => set({ isEmailVerified: verified }),
   setOtpSent: (sent) => set({ otpSent: sent }),
+  setIsPhoneNumbeValid: (valid: boolean) => set({ isPhoneNumbeValid: valid }),
   setSession: (session) => set({ session }),
   session: undefined,
   document: null,
@@ -117,14 +121,22 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
     })),
 
   validateStep: (step) => {
-    const { formData, isEmailVerified, document, profileImage } = get();
+    const {
+      formData,
+      isEmailVerified,
+      document,
+      profileImage,
+      otpSent,
+      isPhoneNumbeValid,
+    } = get();
 
     switch (step) {
       case 1: // Email entry
         return (
           formData.email.trim() !== "" &&
           /\S+@\S+\.\S+/.test(formData.email) &&
-          formData.password.trim() !== ""
+          formData.password.trim() !== "" &&
+          otpSent
         );
       case 2: // OTP verification
         return isEmailVerified;
@@ -142,7 +154,8 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
           formData.phone.trim() !== "" &&
           formData.address.trim() !== "" &&
           formData.countryCode &&
-          formData.countryCode.trim() !== ""
+          formData.countryCode.trim() !== "" &&
+          isPhoneNumbeValid
         );
       case 5: // Professional Info
         const hasRequiredFields =

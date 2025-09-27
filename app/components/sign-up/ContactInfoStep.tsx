@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   TextField,
@@ -19,7 +19,8 @@ import { useFormValidation } from "@/app/store/useFormValidation";
 import { contactInfoSchema } from "@/app/utils/validation";
 
 export default function ContactInfoStep() {
-  const { formData, updateFormData } = useDoctorSignupStore();
+  const { formData, updateFormData, setIsPhoneNumbeValid } =
+    useDoctorSignupStore();
   const { errors, validateField } = useFormValidation(contactInfoSchema);
   const [selectedCountryLength, setSelectedCountryLength] = React.useState(
     countries[0].phoneLength
@@ -36,8 +37,11 @@ export default function ContactInfoStep() {
       ? selectedCountryLength[selectedCountryLength.length - 1]
       : selectedCountryLength;
 
-    if (digits.length <= maxLen) {
-      handleFieldChange("phone", digits);
+    handleFieldChange("phone", digits);
+    if (digits.length !== maxLen) {
+      setIsPhoneNumbeValid(false);
+    } else {
+      setIsPhoneNumbeValid(true);
     }
   };
 

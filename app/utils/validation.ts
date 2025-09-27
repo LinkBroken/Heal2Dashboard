@@ -18,7 +18,7 @@ export const passwordSchema = z
 
 export const phoneSchema = z
   .string()
-  .min(5, "Phone number must be at least 5 digits")
+  .min(6, "Phone number must be at least 6 digits")
   .max(15, "Phone number cannot exceed 15 digits")
   .regex(/^\d+$/, "Phone number can only contain digits");
 
@@ -116,8 +116,8 @@ export const professionalInfoSchema = z.object({
     .string()
     .transform((val) => parseInt(val))
     .refine(
-      (val) => !isNaN(val) && val >= 0 && val <= 50,
-      "Experience must be between 0 and 50 years"
+      (val) => !isNaN(val) && val >= 0 && val <= 15,
+      "Experience must be between 0 and 15 years"
     ),
 
   skills: z

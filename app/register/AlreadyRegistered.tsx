@@ -5,11 +5,13 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 interface AlreadyRegisteredProps {
   onLoginClick?: () => void;
   onSupportClick?: () => void;
+  onRegisterClick?: () => void;
 }
 
 const AlreadyRegistered: React.FC<AlreadyRegisteredProps> = ({
   onLoginClick,
   onSupportClick,
+  onRegisterClick,
 }) => {
   return (
     <Box
@@ -19,7 +21,14 @@ const AlreadyRegistered: React.FC<AlreadyRegisteredProps> = ({
       minHeight="80vh"
     >
       <Card sx={{ maxWidth: 500, p: 3, textAlign: "center", borderRadius: 3 }}>
-        <CardContent>
+        <CardContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
           <CheckCircleIcon color="success" sx={{ fontSize: 60, mb: 2 }} />
           <Typography variant="h5" fontWeight={600} gutterBottom>
             Already Registered
@@ -44,6 +53,9 @@ const AlreadyRegistered: React.FC<AlreadyRegisteredProps> = ({
               Contact Support
             </Button>
           </Box>
+          <Button variant="contained" color="primary" onClick={onRegisterClick}>
+            Register for another doctor
+          </Button>
         </CardContent>
       </Card>
     </Box>

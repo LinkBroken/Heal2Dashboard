@@ -30,6 +30,10 @@ interface FormData {
   emergencyNumber?: string;
   languages?: string[];
   specialty?: string;
+  document: File | string | null;
+  profileImage: File | null;
+  join_reason?: string;
+  university: string;
 }
 interface Error {
   [key: string]: string;
@@ -53,8 +57,10 @@ interface DoctorSignupStore {
   resetForm: () => void;
   session: Session | undefined;
   setSession: (session: Session) => void;
-  file: File | null;
-  setFile: (file: File | null) => void;
+  document: File | null;
+  setDocument: (document: File | null) => void;
+  profileImage: File | null;
+  setProfileImage: (profileImage: File | null) => void;
 }
 
 const initialFormData: FormData = {
@@ -78,6 +84,12 @@ const initialFormData: FormData = {
   otp: "",
   confirmPassword: "",
   skills: "",
+  document: null,
+  profileImage: null,
+  emergencyNumber: "",
+  languages: [],
+  join_reason: "",
+  university: "",
 };
 
 export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
@@ -95,34 +107,64 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
   setOtpSent: (sent) => set({ otpSent: sent }),
   setSession: (session) => set({ session }),
   session: undefined,
-  file: null,
-  setFile: (file) => set({ file }),
+  document: null,
+  setDocument: (document) => set({ document }),
+  profileImage: null,
+  setProfileImage: (profileImage) => set({ profileImage }),
   updateFormData: (data) =>
     set((state) => ({
       formData: { ...state.formData, ...data },
     })),
 
   validateStep: (step) => {
-    const { formData, isEmailVerified, otpSent } = get();
+    const { formData, isEmailVerified, document, profileImage } = get();
 
     switch (step) {
       case 1: // Email entry
         return (
-          formData.email.trim() !== "" && /\S+@\S+\.\S+/.test(formData.email)
+          formData.email.trim() !== "" &&
+          /\S+@\S+\.\S+/.test(formData.email) &&
+          formData.password.trim() !== ""
         );
       case 2: // OTP verification
         return isEmailVerified;
       case 3: // Basic Info
         return (
-          formData.firstName.trim() !== "" && formData.lastName.trim() !== ""
+          formData.firstName.trim() !== "" &&
+          formData.lastName.trim() !== "" &&
+          formData.dateOfBirth.trim() !== "" &&
+          formData.gender.trim() !== "" &&
+          formData.languages &&
+          formData.languages.length > 0
         );
       case 4: // Contact Info
-        return formData.phone.trim() !== "" && formData.address.trim() !== "";
-      case 5: // Professional Info
         return (
-          formData.medicalLicense.trim() !== "" &&
-          formData.specialization.trim() !== ""
+          formData.phone.trim() !== "" &&
+          formData.address.trim() !== "" &&
+          formData.countryCode &&
+          formData.countryCode.trim() !== ""
         );
+      case 5: // Professional Info
+        const hasRequiredFields =
+          formData.doctorType.trim() !== "" &&
+          formData.experience.trim() !== "" &&
+          formData.university.trim() !== "" &&
+          formData.acceptedTerms === true &&
+          document !== null &&
+          profileImage !== null;
+
+        // For specialists, require specialization and license
+        if (formData.doctorType === "specialist") {
+          return (
+            hasRequiredFields &&
+            formData.specialization.trim() !== "" &&
+            formData.licenseNumber.trim() !== ""
+          );
+        }
+
+        // For GPs, specialization is set automatically
+        return hasRequiredFields;
+
       default:
         return false;
     }
@@ -136,5 +178,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>((set, get) => ({
       isEmailVerified: false,
       otpSent: false,
       formData: initialFormData,
+      document: null,
+      profileImage: null,
     }),
 }));

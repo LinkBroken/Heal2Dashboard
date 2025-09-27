@@ -5,7 +5,6 @@ import {
   Grid,
   TextField,
   InputAdornment,
-  IconButton,
   FormControl,
   InputLabel,
   Select,
@@ -14,16 +13,10 @@ import {
   Box,
   FormHelperText,
 } from "@mui/material";
-import {
-  Person,
-  Email,
-  Lock,
-  Visibility,
-  VisibilityOff,
-  PersonOutline,
-  DateRange,
-} from "@mui/icons-material";
+import { Person, PersonOutline, DateRange } from "@mui/icons-material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
+import { useFormValidation } from "@/app/store/useFormValidation";
+import { basicInfoSchema } from "@/app/utils/validation";
 
 const GENDERS = ["Male", "Female"];
 
@@ -42,7 +35,13 @@ const LANGUAGES = [
 ];
 
 export default function BasicInfoStep() {
-  const { formData, errors, updateFormData } = useDoctorSignupStore();
+  const { formData, updateFormData } = useDoctorSignupStore();
+  const { errors, validateField } = useFormValidation(basicInfoSchema);
+
+  const handleFieldChange = (field: string, value: any) => {
+    updateFormData({ [field]: value });
+    validateField(field, value);
+  };
 
   return (
     <Box>
@@ -73,10 +72,10 @@ export default function BasicInfoStep() {
             required
             fullWidth
             label="First Name"
-            value={formData.firstName}
-            onChange={(e) => updateFormData({ firstName: e.target.value })}
-            // error={!!errors.firstName}
-            // helperText={errors.firstName}
+            value={formData.firstName || ""}
+            onChange={(e) => handleFieldChange("firstName", e.target.value)}
+            error={!!errors.firstName}
+            helperText={errors.firstName}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -102,10 +101,10 @@ export default function BasicInfoStep() {
             required
             fullWidth
             label="Last Name"
-            value={formData.lastName}
-            onChange={(e) => updateFormData({ lastName: e.target.value })}
-            // error={!!errors.lastName}
-            // helperText={errors.lastName}
+            value={formData.lastName || ""}
+            onChange={(e) => handleFieldChange("lastName", e.target.value)}
+            error={!!errors.lastName}
+            helperText={errors.lastName}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -128,14 +127,18 @@ export default function BasicInfoStep() {
         </Grid>
 
         <Grid item xs={12} sm={6}>
-          <FormControl fullWidth error={!!errors.languages}>
+          <FormControl
+            style={{ minWidth: "120px" }}
+            fullWidth
+            error={!!errors.languages}
+          >
             <InputLabel>Languages</InputLabel>
             <Select
               multiple
               value={formData.languages || []}
               label="Languages"
               onChange={(e) =>
-                updateFormData({ languages: e.target.value as string[] })
+                handleFieldChange("languages", e.target.value as string[])
               }
               renderValue={(selected) => (selected as string[]).join(", ")}
               sx={{
@@ -167,23 +170,23 @@ export default function BasicInfoStep() {
             type="date"
             label="Date of Birth"
             value={formData.dateOfBirth || ""}
-            onChange={(e) => updateFormData({ dateOfBirth: e.target.value })}
+            onChange={(e) => handleFieldChange("dateOfBirth", e.target.value)}
             error={!!errors.dateOfBirth}
             helperText={errors.dateOfBirth}
             InputLabelProps={{
               shrink: true,
             }}
             InputProps={{
-              "aria-valuemax": new Date().getFullYear() - 18,
               inputProps: {
-                max: "2005-01-01",
+                max: new Date(
+                  new Date().setFullYear(new Date().getFullYear() - 18)
+                )
+                  .toISOString()
+                  .split("T")[0],
               },
               startAdornment: (
                 <InputAdornment position="start">
-                  <DateRange
-                    max={new Date().getFullYear() - 18}
-                    sx={{ color: "action.active" }}
-                  />
+                  <DateRange sx={{ color: "action.active" }} />
                 </InputAdornment>
               ),
             }}
@@ -203,12 +206,16 @@ export default function BasicInfoStep() {
 
         {/* Gender */}
         <Grid item xs={12} sm={6}>
-          <FormControl fullWidth error={!!errors.gender}>
+          <FormControl
+            style={{ width: "120px" }}
+            fullWidth
+            error={!!errors.gender}
+          >
             <InputLabel>Gender</InputLabel>
             <Select
-              value={formData.gender}
+              value={formData.gender || ""}
               label="Gender"
-              onChange={(e) => updateFormData({ gender: e.target.value })}
+              onChange={(e) => handleFieldChange("gender", e.target.value)}
               sx={{
                 borderRadius: 2,
                 "&:hover .MuiOutlinedInput-notchedOutline": {

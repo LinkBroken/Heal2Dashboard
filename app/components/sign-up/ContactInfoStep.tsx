@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   Box,
@@ -11,16 +13,34 @@ import {
   FormControl,
   FormHelperText,
 } from "@mui/material";
-import { useDoctorSignupStore } from "../../store/doctorSignupStore";
+import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
 import { countryPhoneLengths as countries } from "./countries";
+import { useFormValidation } from "@/app/store/useFormValidation";
+import { contactInfoSchema } from "@/app/utils/validation";
 
 export default function ContactInfoStep() {
-  const { formData, updateFormData, errors } = useDoctorSignupStore();
+  const { formData, updateFormData } = useDoctorSignupStore();
+  const { errors, validateField } = useFormValidation(contactInfoSchema);
   const [selectedCountryLength, setSelectedCountryLength] = React.useState(
     countries[0].phoneLength
   );
 
-  console.log(selectedCountryLength);
+  const handleFieldChange = (field: string, value: any) => {
+    updateFormData({ [field]: value });
+    validateField(field, value);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const digits = value.replace(/[^0-9]/g, "");
+    const maxLen = Array.isArray(selectedCountryLength)
+      ? selectedCountryLength[selectedCountryLength.length - 1]
+      : selectedCountryLength;
+
+    if (digits.length <= maxLen) {
+      handleFieldChange("phone", digits);
+    }
+  };
+
   return (
     <Fade in timeout={600}>
       <Box sx={{ maxWidth: 500, mx: "auto" }}>
@@ -45,18 +65,17 @@ export default function ContactInfoStep() {
 
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
-            <FormControl fullWidth>
+            <FormControl required fullWidth error={!!errors.countryCode}>
               <InputLabel>Country</InputLabel>
               <Select
-                value={formData.countryCode}
-                defaultValue={countries[0].dial_code}
+                required
+                value={formData.countryCode || ""}
                 onChange={(e) => {
-                  console.log(e.target.value);
                   const country = countries.find(
                     (c) => c.dial_code === e.target.value
                   );
                   setSelectedCountryLength(country?.phoneLength || 10);
-                  updateFormData({ countryCode: e.target.value });
+                  handleFieldChange("countryCode", e.target.value);
                 }}
                 sx={{
                   borderRadius: 2,
@@ -75,30 +94,21 @@ export default function ContactInfoStep() {
                   </MenuItem>
                 ))}
               </Select>
+              {errors.countryCode && (
+                <FormHelperText>{errors.countryCode}</FormHelperText>
+              )}
             </FormControl>
           </Grid>
+
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Phone Number"
-              value={formData.phone}
-              onChange={(e) => {
-                if (
-                  e.target.value.replace(/[^0-9]/g, "").length <=
-                  (Array.isArray(selectedCountryLength)
-                    ? selectedCountryLength[-1]
-                    : selectedCountryLength)
-                ) {
-                  updateFormData({
-                    phone: e.target.value.replace(/[^0-9]/g, ""),
-                  });
-                }
-
-                errors.phone = `Invalid Phone number from ${
-                  formData.countryCode ? formData.countryCode : "this country"
-                } your phone number must be ${selectedCountryLength} characters long`;
-              }}
+              value={formData.phone || ""}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               required
+              helperText={errors.phone}
+              error={!!errors.phone}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
@@ -120,22 +130,19 @@ export default function ContactInfoStep() {
                 },
               }}
             />
-            {errors.phone && (
-              <FormHelperText error sx={{ mx: 0 }}>
-                {errors.phone}
-              </FormHelperText>
-            )}
           </Grid>
 
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Address"
-              value={formData.address}
-              onChange={(e) => updateFormData({ address: e.target.value })}
+              value={formData.address || ""}
+              onChange={(e) => handleFieldChange("address", e.target.value)}
               required
               multiline
               rows={2}
+              error={!!errors.address}
+              helperText={errors.address}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
@@ -152,75 +159,6 @@ export default function ContactInfoStep() {
               }}
             />
           </Grid>
-          {/* <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="City"
-              value={formData.city}
-              onChange={(e) => updateFormData({ city: e.target.value })}
-              required
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "&:hover fieldset": {
-                    borderColor: "#667eea",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#667eea",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#667eea",
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="State"
-              value={formData.state}
-              onChange={(e) => updateFormData({ state: e.target.value })}
-              required
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "&:hover fieldset": {
-                    borderColor: "#667eea",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#667eea",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#667eea",
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="ZIP Code"
-              value={formData.zipCode}
-              onChange={(e) => updateFormData({ zipCode: e.target.value })}
-              required
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "&:hover fieldset": {
-                    borderColor: "#667eea",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#667eea",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#667eea",
-                },
-              }}
-            />
-          </Grid>*/}
         </Grid>
       </Box>
     </Fade>

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Box,
@@ -17,23 +19,15 @@ import {
   Visibility,
   VisibilityOff,
 } from "@mui/icons-material";
-import { useDoctorSignupStore } from "../../store/doctorSignupStore";
+import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
 import { createClient } from "@/app/utils/supabase/client";
+import { useFormValidation } from "@/app/store/useFormValidation";
+import { emailStepSchema } from "@/app/utils/validation";
 
 const supabase = createClient();
 
 export default function EmailStep() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const toggleShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const toggleShowConfirmPassword = () => {
-    setShowConfirmPassword(!showConfirmPassword);
-  };
-
   const {
     formData,
     updateFormData,
@@ -43,9 +37,18 @@ export default function EmailStep() {
     setError,
     setLoading,
     setOtpSent,
-    errors,
   } = useDoctorSignupStore();
-  const [localError, setLocalError] = useState("");
+  const { errors, validateField, validateForm } =
+    useFormValidation(emailStepSchema);
+
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleFieldChange = (field: string, value: any) => {
+    updateFormData({ [field]: value });
+    validateField(field, value);
+  };
 
   const getPasswordStrength = (password: string) => {
     let strength = 0;
@@ -64,45 +67,26 @@ export default function EmailStep() {
     return { label: "Strong", color: "#16a34a" };
   };
 
-  const passwordStrength = getPasswordStrength(formData.password);
+  const passwordStrength = getPasswordStrength(formData.password || "");
   const strengthInfo = getPasswordStrengthLabel(passwordStrength);
 
-  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const email = event.target.value;
-    updateFormData({ email });
-
-    // Clear errors when user starts typing
-    if (email && !/\S+@\S+\.\S+/.test(email)) {
-      setLocalError("Please enter a valid email address");
-    } else {
-      setLocalError("");
-      setError("");
-    }
-  };
-  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const password = event.target.value;
-    if (password.length < 8) {
-      setLocalError("Password must be at least 8 characters long");
-    } else {
-      setLocalError("");
-    }
-    updateFormData({ password });
-  };
-
   const handleSendOTP = async () => {
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) {
-      setLocalError("Please enter a valid email address");
+    const validation = validateForm({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (!validation.success) {
       return;
     }
 
     setLoading(true);
     setError("");
-    setLocalError("");
 
     try {
       const { error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password, // Temporary password
+        email: formData.email!,
+        password: formData.password!,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -148,9 +132,9 @@ export default function EmailStep() {
           We'll send you a verification code to confirm your email address
         </Typography>
 
-        {(error || localError) && (
+        {error && (
           <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-            {error || localError}
+            {error}
           </Alert>
         )}
 
@@ -165,11 +149,16 @@ export default function EmailStep() {
           fullWidth
           type="email"
           label="Email Address"
-          value={formData.email}
-          onChange={handleEmailChange}
+          value={formData.email || ""}
+          onChange={(e) => handleFieldChange("email", e.target.value)}
           required
           variant="outlined"
           disabled={loading}
+          error={!!errors.email}
+          helperText={
+            errors.email ||
+            "This will be your login email for the medical platform"
+          }
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -192,17 +181,17 @@ export default function EmailStep() {
               color: "#667eea",
             },
           }}
-          helperText="This will be your login email for the medical platform"
         />
-        <Grid spacing={12}>
+
+        <Grid container spacing={2}>
           <Grid item xs={12}>
             <TextField
               required
               fullWidth
               type={showPassword ? "text" : "password"}
               label="Password"
-              value={formData.password}
-              onChange={(e) => updateFormData({ password: e.target.value })}
+              value={formData.password || ""}
+              onChange={(e) => handleFieldChange("password", e.target.value)}
               error={!!errors.password}
               helperText={errors.password}
               InputProps={{
@@ -269,46 +258,6 @@ export default function EmailStep() {
             )}
           </Grid>
         </Grid>
-        {/* Confirm Password */}
-        {/* <Grid item xs={12}>
-          <TextField
-            required
-            fullWidth
-            type={showConfirmPassword ? "text" : "password"}
-            label="Confirm Password"
-            value={formData.confirmPassword}
-            onChange={(e) =>
-              updateFormData({ confirmPassword: e.target.value })
-            }
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Lock sx={{ color: "action.active" }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={toggleShowConfirmPassword} edge="end">
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                "&:hover fieldset": {
-                  borderColor: "#667eea",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#667eea",
-                },
-              },
-            }}
-          />
-        </Grid> */}
 
         {!otpSent && (
           <Button
@@ -316,7 +265,11 @@ export default function EmailStep() {
             variant="contained"
             onClick={handleSendOTP}
             disabled={
-              loading || !formData.email || !/\S+@\S+\.\S+/.test(formData.email)
+              loading ||
+              !!errors.email ||
+              !!errors.password ||
+              !formData.email ||
+              !formData.password
             }
             startIcon={<Send />}
             sx={{
@@ -326,7 +279,7 @@ export default function EmailStep() {
               textTransform: "none",
               fontSize: "1rem",
               fontWeight: 600,
-              margin: 2,
+              mt: 2,
               "&:hover": {
                 background: "linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)",
               },

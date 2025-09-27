@@ -30,6 +30,14 @@ import {
   PersonAdd,
 } from "@mui/icons-material";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import {
+  UploadDoctorCertificate,
+  uploadDoctorProfile,
+} from "../actions/uploadProfile";
+import { useFormValidation } from "../store/useFormValidation";
+import router from "next/router";
+import AlreadyRegistered from "./AlreadyRegistered";
+import RegistrationSuccessModal from "../components/sign-up/SuccessModal";
 
 const steps = [
   "Email Verification",
@@ -39,52 +47,14 @@ const steps = [
   "Professional Details",
 ];
 
-// const handleUpload = async (
-//   file: File,
-//   userId: string,
-//   role: string,
-//   token: string
-// ) => {
-//   if (!file) return;
-
-//   const formDataToSend = new FormData();
-//   console.log(file);
-//   formDataToSend.append("file", {
-//     uri: file.webkitRelativePath,
-//     name: "profile.png",
-//     type: "image/png",
-//   });
-//   formDataToSend.append("id", userId);
-//   formDataToSend.append("type", role);
-
-//   try {
-//     const response = await fetch(
-//       "https://heal2gether-backend.vercel.app/api/upload/formData", // Note: fixed typo from formDate
-//       {
-//         method: "POST",
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//           // Let React Native set Content-Type automatically
-//         },
-//         body: formDataToSend,
-//       }
-//     );
-
-//     const data = await response.json();
-//     console.log(data);
-//     if (!response.ok) throw new Error(data.message || "Upload failed");
-//     // Alert.alert("Success", "Profile image uploaded successfully");
-//   } catch (error) {
-//     console.error("Upload failed:", error);
-//     console.error("Error", "Failed to upload profile image");
-//   }
-// };
 export default function DoctorSignupPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [slideDirection, setSlideDirection] = useState<"left" | "right">(
     "left"
   );
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
   useEffect(() => {
     async function getSupabase() {
       const supabase = await createClient(
@@ -108,9 +78,10 @@ export default function DoctorSignupPage() {
     formData,
     resetForm,
     session,
-    file,
-  } = useDoctorSignupStore();
 
+    profileImage,
+    document,
+  } = useDoctorSignupStore();
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setSlideDirection("left");
@@ -126,7 +97,10 @@ export default function DoctorSignupPage() {
   const handleSubmit = async () => {
     console.log(currentStep);
     // if (!validateStep(currentStep)) return;
-
+    if (!validateStep(currentStep)) {
+      alert("Please fix the wrong fields");
+      return;
+    }
     setLoading(true);
     const supabase = new SupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -169,56 +143,72 @@ export default function DoctorSignupPage() {
         alert("Registration failed. Please try again.");
         return;
       }
-      const doctorData = {
-        id: user?.id,
-        name: `${formData.firstName} ${formData.lastName}`,
-        specialty: formData.specialization || "General",
-        doctor_type: formData.doctorType,
-        location: formData.address,
-        phone: `${
-          formData.countryCode ? formData.countryCode.replace("+", "00") : ""
-        }${formData.phone}`,
-        email: user?.email,
-        date_of_birth: formData.dateOfBirth,
-        rating: 0,
-        experience: formData.experience,
-        address: formData.address,
-        status: "pending",
-        license_number: formData.licenseNumber,
-        gender: formData.gender?.toLowerCase(),
-        profile_id: user?.id,
-        skills: formData.skills,
-        emergency_number: formData.emergencyNumber,
-      };
-      // console.log(id);
-      const { error: doctorError } = await supabase
-        .from("doctors")
-        .insert(doctorData)
-        .eq("id", user?.id);
-      console.log(doctorError);
-      if (doctorError) {
-        console.error("Registration error:", doctorError);
-        alert("Registration failed. Please try again.");
-        return;
-      }
-      // if (file) {
-      //   await handleUpload(
-      //     file,
-      //     user?.id ?? "",
-      //     "doctor",
-      //     session?.access_token ?? ""
-      //   );
-      // }
+      try {
+        const doctorData = {
+          id: user?.id,
+          name: `${formData.firstName} ${formData.lastName}`,
+          specialty: formData.specialization || "General",
+          doctor_type: formData.doctorType,
+          location: formData.address,
+          phone: `${
+            formData.countryCode ? formData.countryCode.replace("+", "00") : ""
+          }${formData.phone}`,
+          email: user?.email,
+          date_of_birth: formData.dateOfBirth,
+          rating: 0,
+          experience: formData.experience,
+          address: formData.address,
+          status: "pending",
+          license_number: formData.licenseNumber,
+          gender: formData.gender?.toLowerCase(),
+          profile_id: user?.id,
+          skills: formData.skills,
+          emergency_number: formData.emergencyNumber,
+          join_reason: formData.join_reason,
+          university: formData.university,
+        };
 
-      resetForm();
+        const { data, error: doctorError } = await supabase
+          .from("doctors")
+          .insert([doctorData])
+          .eq("id", user?.id);
+
+        console.log(doctorError);
+        if (doctorError) {
+          console.error("Registration error:", doctorError);
+          alert("Registration failed. Please try again.");
+          return;
+        }
+
+        if (document) {
+          await UploadDoctorCertificate({
+            document: document,
+            userId: user?.id ?? "",
+          });
+        }
+
+        if (profileImage) {
+          console.log(profileImage, "image");
+          await uploadDoctorProfile({
+            image: profileImage,
+            userId: user?.id ?? "",
+          });
+        }
+        // console.log(id);
+
+        console.log(data);
+      } catch (error) {
+        console.log(error);
+        console.error("Doctor error:", error);
+      }
     } catch (error) {
       console.log(error);
       console.error("Registration error:", error);
     } finally {
       localStorage.setItem("registered", "true");
-      alert("Registration completed successfully!");
-
+      setSuccessModalOpen(true);
       await supabase.auth.signOut();
+      router.replace("/");
       setLoading(false);
     }
   };
@@ -232,8 +222,21 @@ export default function DoctorSignupPage() {
   }, [isEmailVerified, currentStep]);
 
   const renderStepContent = () => {
-    const { session } = useDoctorSignupStore();
-    console.log(session);
+    useEffect(() => {
+      const registered = localStorage.getItem("registered")!;
+      console.log(registered);
+      if (!registered) {
+        setIsRegistered(true);
+      }
+    }, []);
+    if (!isRegistered) {
+      return (
+        <AlreadyRegistered
+          onLoginClick={() => alert("Login")}
+          onSupportClick={() => window.open("mailto:heal2gether.app@gmail.com")}
+        />
+      );
+    }
     switch (currentStep) {
       case 1:
         return <EmailStep />;
@@ -280,6 +283,11 @@ export default function DoctorSignupPage() {
         },
       }}
     >
+      <RegistrationSuccessModal
+        open={successModalOpen}
+        onClose={() => setSuccessModalOpen(false)}
+        onGoToLogin={() => setSuccessModalOpen(false)}
+      />
       <Container maxWidth="md">
         <Fade in={true} timeout={800}>
           <Card
@@ -439,7 +447,7 @@ export default function DoctorSignupPage() {
                       onClick={handleNext}
                       variant="contained"
                       endIcon={<ArrowForward />}
-                      disabled={loading || !canProceed()}
+                      disabled={!canProceed()}
                       sx={{
                         background:
                           "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -461,7 +469,7 @@ export default function DoctorSignupPage() {
                       onClick={handleSubmit}
                       variant="contained"
                       endIcon={<CheckCircle />}
-                      disabled={false}
+                      disabled={!canProceed()}
                       sx={{
                         background:
                           "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",

@@ -18,7 +18,6 @@ export default async function getAppointmentsData(): Promise<
         last_name,
         date_of_birth,
         gender,
-        blood_type,
         phone,
         email,
         address,

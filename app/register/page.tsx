@@ -255,7 +255,6 @@ export default function DoctorSignupPage() {
       default:
         return <EmailStep />;
     }
-    // return <ContactInfoStep />;
   };
 
   const canProceed = () => {

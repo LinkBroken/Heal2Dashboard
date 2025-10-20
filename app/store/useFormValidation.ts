@@ -9,36 +9,51 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   const validateField = useCallback(
-    (fieldName: string, value: any) => {
+    (fieldName: string, value: any, context?: any) => {
       try {
-        // Try to parse individual field value with schema
-        const fieldSchema = schema.shape?.[fieldName];
-        if (fieldSchema) {
-          fieldSchema.parse(value);
-          setErrors((prev) => ({
-            ...prev,
-            [fieldName]: "",
-          }));
-          return true;
-        } else {
-          // Fallback: validate the whole object but only show error for this field
-          const testObject = { [fieldName]: value };
-          schema.parse(testObject);
-          setErrors((prev) => ({
-            ...prev,
-            [fieldName]: "",
-          }));
+        // Get the schema shape
+        const schemaShape = (schema as any)._def?.shape?.();
+
+        if (!schemaShape || !schemaShape[fieldName]) {
+          // If field not in schema, just clear any existing error
+          setErrors((prev) => {
+            const { [fieldName]: _, ...rest } = prev;
+            return rest;
+          });
           return true;
         }
+
+        // Validate the specific field
+        const fieldSchema = schemaShape[fieldName];
+
+        // For optional fields, allow undefined/null/empty
+        if (value === "" || value === null || value === undefined) {
+          if (fieldSchema._def.typeName === "ZodOptional") {
+            setErrors((prev) => {
+              const { [fieldName]: _, ...rest } = prev;
+              return rest;
+            });
+            return true;
+          }
+        }
+
+        // Validate the field
+        fieldSchema.parse(value);
+
+        // Clear error on success
+        setErrors((prev) => {
+          const { [fieldName]: _, ...rest } = prev;
+          return rest;
+        });
+        return true;
       } catch (error) {
         if (error instanceof z.ZodError) {
-          const fieldError = error.errors.find(
-            (err) => err.path.includes(fieldName) || err.path.length === 0
-          );
+          const errorMessage = error.errors[0]?.message || "Invalid value";
           setErrors((prev) => ({
             ...prev,
-            [fieldName]: fieldError?.message || "Invalid value",
+            [fieldName]: errorMessage,
           }));
+          return false;
         }
         return false;
       }
@@ -49,15 +64,18 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
   const validateForm = useCallback(
     (data: any) => {
       try {
-        schema.parse(data);
+        const validatedData = schema.parse(data);
         setErrors({});
-        return { success: true, data, errors: {} };
+        return { success: true, data: validatedData, errors: {} };
       } catch (error) {
         if (error instanceof z.ZodError) {
           const newErrors: ValidationErrors = {};
           error.errors.forEach((err) => {
-            const path = err.path.join(".");
-            newErrors[path] = err.message;
+            const fieldName = err.path[0]?.toString() || "form";
+            // Only keep the first error for each field
+            if (!newErrors[fieldName]) {
+              newErrors[fieldName] = err.message;
+            }
           });
           setErrors(newErrors);
           return { success: false, data: null, errors: newErrors };
@@ -73,10 +91,10 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
   }, []);
 
   const clearFieldError = useCallback((fieldName: string) => {
-    setErrors((prev) => ({
-      ...prev,
-      [fieldName]: "",
-    }));
+    setErrors((prev) => {
+      const { [fieldName]: _, ...rest } = prev;
+      return rest;
+    });
   }, []);
 
   return {

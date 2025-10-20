@@ -638,14 +638,14 @@ export default function ProfessionalInfoStep() {
                 <Typography variant="body2">
                   I agree to the{" "}
                   <Link
-                    href="/terms"
+                    href={`/register/terms`}
                     sx={{ color: "#16a34a", fontWeight: 600 }}
                   >
                     Terms of Service
                   </Link>{" "}
                   and{" "}
                   <Link
-                    href="/privacy"
+                    href="/register/terms"
                     sx={{ color: "#16a34a", fontWeight: 600 }}
                   >
                     Privacy Policy

@@ -37,11 +37,22 @@ export default function ContactInfoStep() {
       ? selectedCountryLength[selectedCountryLength.length - 1]
       : selectedCountryLength;
 
-    handleFieldChange("phone", digits);
-    if (digits.length !== maxLen) {
+    // Only allow up to maxLen digits
+    const truncatedDigits = digits.slice(0, maxLen);
+
+    handleFieldChange("phone", truncatedDigits);
+
+    // Validate phone length
+    if (truncatedDigits.length === 0) {
       setIsPhoneNumbeValid(false);
+    } else if (Array.isArray(selectedCountryLength)) {
+      // Check if length matches any of the valid lengths
+      setIsPhoneNumbeValid(
+        selectedCountryLength.includes(truncatedDigits.length)
+      );
     } else {
-      setIsPhoneNumbeValid(true);
+      // Check if length matches the single valid length
+      setIsPhoneNumbeValid(truncatedDigits.length === selectedCountryLength);
     }
   };
 

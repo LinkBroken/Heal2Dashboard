@@ -213,6 +213,9 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
         isPhoneNumbeValid: state.isPhoneNumbeValid,
         document: state.document, // Now it's base64 string, safe to persist
         profileImage: state.profileImage, // Now it's base64 string, safe to persist
+        session: state.session,
+        errors: state.errors,
+        loading: state.loading,
         // Don't persist session for security
         // Don't persist loading/error states
       }),

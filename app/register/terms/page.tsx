@@ -117,7 +117,7 @@ export default function TermsAndConditions() {
       title: "6. Data Protection & Security",
       color: "cyan",
       points: [
-        "We are committed to protecting your personal information.",
+        "We are committed to protecting your personal and health information.",
         "All data you share with us is stored and processed with privacy.",
         "We implement appropriate technical, administrative, and organizational safeguards to protect your information from unauthorized access, loss, misuse, or disclosure.",
         "Your information will never be shared with third parties without your explicit consent, except as required by law.",
@@ -127,8 +127,29 @@ export default function TermsAndConditions() {
     },
     {
       id: "panel7",
+      icon: <Lock />,
+      title: "7. Data Protection & Security",
+      color: "cyan",
+      points: [
+        "We apply strict technical, administrative, and organizational safeguards to protect your information.",
+        "Access to your data is restricted to authorized personnel only.",
+      ],
+    },
+    {
+      id: "panel8",
+      icon: <CheckCircle />,
+      title: "8. Your Rights",
+      color: "green",
+      points: [
+        "Depending on your consent, you may have the right to:",
+        "Request correction of inaccurate or incomplete information.",
+        "File report regarding unsatisfactory service.",
+      ],
+    },
+    {
+      id: "panel9",
       icon: <Baby />,
-      title: "7. Children's Privacy",
+      title: "9. Children's Privacy",
       color: "pink",
       points: [
         "Our Services are not directed toward children under 18 without parental/guardian consent.",
@@ -136,9 +157,9 @@ export default function TermsAndConditions() {
       ],
     },
     {
-      id: "panel8",
+      id: "panel10",
       icon: <Shield />,
-      title: "8. Limitation of Liability",
+      title: "10. Limitation of Liability",
       color: "gray",
       points: [
         "To the maximum extent permitted by law:",
@@ -147,18 +168,18 @@ export default function TermsAndConditions() {
       ],
     },
     {
-      id: "panel9",
+      id: "panel11",
       icon: <RefreshCw />,
-      title: "9. Changes to Terms",
+      title: "11. Changes to This Policy",
       color: "brown",
       points: [
-        "We may update these Terms & Conditions at any time. Changes will be posted with an updated 'Last Updated' date. Continued use of our Services constitutes acceptance of the updated terms.",
+        "We may update this Privacy Policy from time to time. Updates will be posted with a revised 'Last Updated' date. Continued use of our Services means you accept the updated policy.",
       ],
     },
     {
-      id: "panel10",
+      id: "panel12",
       icon: <Mail />,
-      title: "10. Contact Us",
+      title: "12. Contact Us",
       color: "indigo",
       points: [
         "For questions regarding these Terms & Conditions or Privacy Policy, please contact us at:",

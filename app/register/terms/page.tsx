@@ -114,7 +114,7 @@ export default function TermsAndConditions() {
     {
       id: "panel6",
       icon: <Lock />,
-      title: "6. Data Protection & Security",
+      title: "6. Data Protection & Security part 1",
       color: "cyan",
       points: [
         "We are committed to protecting your personal and health information.",
@@ -128,7 +128,7 @@ export default function TermsAndConditions() {
     {
       id: "panel7",
       icon: <Lock />,
-      title: "7. Data Protection & Security",
+      title: "7. Data Protection & Security part 2",
       color: "cyan",
       points: [
         "We apply strict technical, administrative, and organizational safeguards to protect your information.",

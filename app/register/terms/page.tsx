@@ -69,11 +69,11 @@ export default function TermsAndConditions() {
     {
       id: "panel2",
       icon: <Heart />,
-      title: "2. We use your information to",
+      title: "2. How We Use Your Information",
       color: "green",
       points: [
-        "Provide health consultations and related services.",
-        "Communicate with you regarding appointments, follow-ups, or support.",
+        "Provide translation services.",
+        "Communicate with you regarding appointments or support.",
         "Improve our Services, technology, and user experience.",
         "Ensure compliance with legal and regulatory requirements.",
       ],
@@ -83,21 +83,22 @@ export default function TermsAndConditions() {
     {
       id: "panel3",
       icon: <AlertTriangle />,
-      title: "3. No Emergency Services",
+      title: "3. Nature of Services",
       color: "orange",
       points: [
-        "Our Services are not suitable for emergencies.",
-        "If you believe you are experiencing a medical emergency, call 911 (or your local emergency number) immediately.",
+        "We provide health-related consultations through qualified experts.",
+        "Our role is to offer the medical information you provide us with in your native language to support your health decisions.",
+        "You, the user, retain full responsibility for making your own health decisions.",
       ],
     },
     {
       id: "panel4",
       icon: <CheckCircle />,
-      title: "4. Consultation Limit",
+      title: "4. Limitations of Consultation",
       color: "purple",
       points: [
-        "Consultations are based on the information you provide. If such information is incomplete, inaccurate, or withheld, our ability to provide useful recommendations may be limited.",
-        "Our providers may advise you to seek in-person medical evaluation if your condition cannot be adequately addressed through consultation.",
+        "Our services are based on the information you provide. If such information is incomplete, inaccurate, or withheld, our ability to provide useful translation may be limited.",
+        "Our services are not directed toward children under 18 without parental/guardian consent.",
       ],
     },
     {
@@ -106,20 +107,21 @@ export default function TermsAndConditions() {
       title: "5. No Guarantees",
       color: "red",
       points: [
-        "While our providers aim to give reliable and professional guidance, we cannot guarantee outcomes.",
+        "While our providers aim to give reliable information, we cannot guarantee outcomes.",
         "Results depend on multiple factors outside of our control, including your own decisions, adherence, and underlying health conditions.",
       ],
     },
     {
       id: "panel6",
       icon: <Lock />,
-      title: "6. Data Protection & Privacy",
+      title: "6. Data Protection & Security",
       color: "cyan",
       points: [
-        "We are committed to protecting your personal and health information.",
-        "All data you share with us is stored and processed in compliance with applicable data protection laws (e.g., HIPAA, GDPR, or other local regulations).",
+        "We are committed to protecting your personal information.",
+        "All data you share with us is stored and processed with privacy.",
         "We implement appropriate technical, administrative, and organizational safeguards to protect your information from unauthorized access, loss, misuse, or disclosure.",
-        "Your information will never be shared with third parties without your explicit consent, except as required by law or necessary to provide our Services (e.g., licensed providers directly involved in your care).",
+        "Your information will never be shared with third parties without your explicit consent, except as required by law.",
+        "Access to your data is restricted to authorized personnel only.",
         "For more details, please refer to our Privacy Policy.",
       ],
     },
@@ -140,7 +142,7 @@ export default function TermsAndConditions() {
       color: "gray",
       points: [
         "To the maximum extent permitted by law:",
-        "Heal2gether and its providers are not liable for any adverse outcomes resulting from your decisions, actions, or failure to act after consultation.",
+        "Heal2gether and its providers are not liable for any adverse outcomes resulting from your decisions, actions, or failure to act after a call.",
         "You accept full responsibility for your choices regarding your health.",
       ],
     },
@@ -150,7 +152,7 @@ export default function TermsAndConditions() {
       title: "9. Changes to Terms",
       color: "brown",
       points: [
-        'We may update these Terms & Conditions at any time. Changes will be posted with an updated "Last Updated" date. Continued use of our Services constitutes acceptance of the updated terms.',
+        "We may update these Terms & Conditions at any time. Changes will be posted with an updated 'Last Updated' date. Continued use of our Services constitutes acceptance of the updated terms.",
       ],
     },
     {
@@ -159,8 +161,8 @@ export default function TermsAndConditions() {
       title: "10. Contact Us",
       color: "indigo",
       points: [
-        "For questions regarding these Terms & Conditions, please contact us at:",
-        "heal2gether.app@gmail.com",
+        "For questions regarding these Terms & Conditions or Privacy Policy, please contact us at:",
+        "Heal2gether@gmail.com",
       ],
     },
   ];

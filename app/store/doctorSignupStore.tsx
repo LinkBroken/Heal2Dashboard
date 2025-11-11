@@ -36,6 +36,7 @@ interface FormData {
   profileImage: File | null;
   join_reason?: string;
   university: string;
+  allowedCountries?: string[];
 }
 
 interface Error {
@@ -95,6 +96,7 @@ const initialFormData: FormData = {
   languages: [],
   join_reason: "",
   university: "",
+  allowedCountries: [],
 };
 
 export const useDoctorSignupStore = create<DoctorSignupStore>()(
@@ -155,7 +157,9 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
               formData.dateOfBirth.trim() !== "" &&
               formData.gender.trim() !== "" &&
               formData.languages &&
-              formData.languages.length > 0
+              formData.languages.length > 0 &&
+              formData.allowedCountries &&
+              formData.allowedCountries.length > 0
             );
           case 4:
             return (

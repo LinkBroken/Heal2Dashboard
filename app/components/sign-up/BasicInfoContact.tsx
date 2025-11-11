@@ -12,11 +12,14 @@ import {
   Typography,
   Box,
   FormHelperText,
+  ListItemText,
+  Checkbox,
 } from "@mui/material";
 import { Person, PersonOutline, DateRange } from "@mui/icons-material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
 import { useFormValidation } from "@/app/store/useFormValidation";
 import { basicInfoSchema } from "@/app/utils/validation";
+import { countryPhoneLengths } from "./CONSTANTS";
 
 const GENDERS = ["Male", "Female"];
 
@@ -234,7 +237,58 @@ export default function BasicInfoStep() {
             </Select>
             {errors.gender && <FormHelperText>{errors.gender}</FormHelperText>}
           </FormControl>
+          {/* Countries Multi-select */}
         </Grid>
+      </Grid>
+      <Grid
+        xs={12}
+        sm={6}
+        sx={{
+          mt: 3,
+        }}
+      >
+        <FormControl fullWidth error={!!errors.allowedCountries}>
+          <InputLabel>Which Countries You want your patients from</InputLabel>
+          <Select
+            multiple
+            value={formData.allowedCountries || []}
+            label="Your Patients' Country"
+            onChange={(e) =>
+              handleFieldChange("allowedCountries", e.target.value as string[])
+            }
+            renderValue={(selected) =>
+              countryPhoneLengths
+                .filter((c) => (selected as string[]).includes(c.code))
+                .map((c) => c.name)
+                .join(", ")
+            }
+            sx={{
+              borderRadius: 2,
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#667eea",
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#667eea",
+              },
+            }}
+          >
+            {countryPhoneLengths.map((country) => (
+              <MenuItem key={country.code} value={country.code}>
+                <Checkbox
+                  checked={(formData.allowedCountries || []).includes(
+                    country.code
+                  )}
+                />
+                <ListItemText
+                  primary={`${country.name} (${country.dial_code})`}
+                />
+              </MenuItem>
+            ))}
+          </Select>
+          {errors.allowedCountries && (
+            <FormHelperText>{errors.allowedCountries}</FormHelperText>
+          )}
+        </FormControl>
       </Grid>
     </Box>
   );

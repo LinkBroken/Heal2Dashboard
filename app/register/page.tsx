@@ -167,6 +167,7 @@ export default function DoctorSignupPage() {
           emergency_number: formData.emergencyNumber,
           join_reason: formData.join_reason,
           university: formData.university,
+          allowed_countries: formData.allowedCountries,
         };
 
         const { data, error: doctorError } = await supabase
@@ -241,20 +242,21 @@ export default function DoctorSignupPage() {
         />
       );
     }
-    switch (currentStep) {
-      case 1:
-        return <EmailStep />;
-      case 2:
-        return <OTPStep />;
-      case 3:
-        return <BasicInfoStep />;
-      case 4:
-        return <ContactInfoStep />;
-      case 5:
-        return <ProfessionalInfoStep />;
-      default:
-        return <EmailStep />;
-    }
+    // switch (currentStep) {
+    //   case 1:
+    //     return <EmailStep />;
+    //   case 2:
+    //     return <OTPStep />;
+    //   case 3:
+    //     return <BasicInfoStep />;
+    //   case 4:
+    //     return <ContactInfoStep />;
+    //   case 5:
+    //     return <ProfessionalInfoStep />;
+    //   default:
+    //     return <EmailStep />;
+    //   }
+    return <BasicInfoStep />;
   };
 
   const canProceed = () => {

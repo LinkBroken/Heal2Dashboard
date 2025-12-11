@@ -36,6 +36,7 @@ import {
   uploadDoctorProfile,
 } from "../actions/uploadProfile";
 import AlreadyRegistered from "./AlreadyRegistered";
+import router from "next/router";
 
 const steps = [
   "Email Verification",
@@ -85,6 +86,36 @@ export default function DoctorSignupPage() {
     if (validateStep(currentStep)) {
       setSlideDirection("left");
       setCurrentStep(Math.min(currentStep + 1, 5));
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?redirect=/user/delete-account`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+          // Force PKCE flow
+          skipBrowserRedirect: false,
+        },
+      });
+
+      if (error) {
+        console.error("Google sign-in error:", error);
+        alert("Failed to sign in with Google. Please try again.");
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      alert("An error occurred during sign-in");
     }
   };
 
@@ -242,21 +273,20 @@ export default function DoctorSignupPage() {
         />
       );
     }
-    // switch (currentStep) {
-    //   case 1:
-    //     return <EmailStep />;
-    //   case 2:
-    //     return <OTPStep />;
-    //   case 3:
-    //     return <BasicInfoStep />;
-    //   case 4:
-    //     return <ContactInfoStep />;
-    //   case 5:
-    //     return <ProfessionalInfoStep />;
-    //   default:
-    //     return <EmailStep />;
-    //   }
-    return <BasicInfoStep />;
+    switch (currentStep) {
+      case 1:
+        return <EmailStep />;
+      case 2:
+        return <OTPStep />;
+      case 3:
+        return <BasicInfoStep />;
+      case 4:
+        return <ContactInfoStep />;
+      case 5:
+        return <ProfessionalInfoStep />;
+      default:
+        return <EmailStep />;
+    }
   };
 
   const canProceed = () => {
@@ -498,6 +528,12 @@ export default function DoctorSignupPage() {
                   )}
                 </Grid>
               </Grid>
+              <Button
+                onClick={async () => signInWithGoogle()}
+                variant="outlined"
+              >
+                Delete Account
+              </Button>
             </CardContent>
           </Card>
         </Fade>

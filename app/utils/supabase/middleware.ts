@@ -15,7 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -29,53 +29,74 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
+  // IMPORTANT: This refreshes the session and sets cookies properly
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user?.id)
-    .single();
-  console.log(profile);
+
+  console.log("=== MIDDLEWARE ===");
+  console.log("Path:", request.nextUrl.pathname);
+  console.log("User:", user?.email || "null");
+  console.log(
+    "Cookies:",
+    request.cookies
+      .getAll()
+      .map((c) => c.name)
+      .join(", ")
+  );
+
+  // Allow auth callback to process without interference
+  if (request.nextUrl.pathname.startsWith("/auth/callback")) {
+    console.log("Allowing auth callback to pass through");
+    return supabaseResponse;
+  }
+
+  // Allow API routes to pass through
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
+  // Handle delete account page - require authentication
+  if (request.nextUrl.pathname.startsWith("/user/delete-account")) {
+    if (!user) {
+      console.log("No user - redirecting to register");
+      const url = request.nextUrl.clone();
+      url.pathname = "/register";
+      url.searchParams.set("redirect", "/user/delete-account");
+      return NextResponse.redirect(url);
+    }
+    console.log("User authenticated - allowing delete-account access");
+    return supabaseResponse;
+  }
+
+  // Get profile only if user exists
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    console.log("Profile:", profile?.first_name || "null");
+    if (profileError) console.log("Profile Error:", profileError.message);
+  }
+
+  // Redirect unauthenticated users to register (except for public pages)
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/admin/dashboard/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/register")
+    !request.nextUrl.pathname.startsWith("/register") &&
+    !request.nextUrl.pathname.startsWith("/_next") &&
+    !request.nextUrl.pathname.startsWith("/api")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    console.log("No user found - redirecting to register");
     const url = request.nextUrl.clone();
     url.pathname = "/register";
-
     return NextResponse.redirect(url);
   }
 
-  // if (profile?.role == "doctor") {
-  //   await supabase.auth.signOut();
-  //   const url = request.nextUrl.clone();
-  //   url.pathname = "/dashboard";
-  //   return NextResponse.redirect(url);
-  // }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
+  console.log("=== MIDDLEWARE END ===");
   return supabaseResponse;
 }

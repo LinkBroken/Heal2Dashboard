@@ -86,7 +86,7 @@ export default function TermsAndConditions() {
       title: "3. Nature of Services",
       color: "orange",
       points: [
-        "We provide health-related consultations through qualified experts.",
+        "We provide health-related translations through qualified experts.",
         "Our role is to offer the medical information you provide us with in your native language to support your health decisions.",
         "You, the user, retain full responsibility for making your own health decisions.",
       ],

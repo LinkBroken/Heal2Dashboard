@@ -36,7 +36,6 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const pathname = usePathname();
-  const supabase = createClient();
   const menuItems = [
     { icon: LayoutDashboard, text: "Dashboard", href: "/" },
     { icon: Users, text: "Users", href: "/users" },
@@ -148,6 +147,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
           </ListItemIcon>
           <ListItemText
             onClick={async () => {
+              const supabase = await createClient();
+
               await supabase.auth.signOut();
               window.location.reload();
             }}

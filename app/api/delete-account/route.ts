@@ -1,57 +1,36 @@
-import { createClient } from "@/app/utils/supabase/server";
+import { createClient as createServerSupabaseClient } from "@/app/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function DELETE() {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerSupabaseClient();
 
-    // Get the current user
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Delete the user's profile from the profiles table
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", user.id);
-
-    if (profileError) {
-      console.error("Error deleting profile:", profileError);
-      // Continue even if profile deletion fails
-    }
-
-    // Delete any other related data here
-    // For example:
-    // await supabase.from('user_posts').delete().eq('user_id', user.id);
-    // await supabase.from('user_comments').delete().eq('user_id', user.id);
-
-    // Delete the auth user (this also signs them out)
     const { error: deleteError } = await supabase.auth.admin.deleteUser(
       user.id
     );
 
     if (deleteError) {
-      console.error("Error deleting user:", deleteError);
+      console.error("Delete user error:", deleteError);
       return NextResponse.json(
-        { error: "Failed to delete account. Please contact support." },
+        { error: "Failed to delete account" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(
-      { message: "Account deleted successfully" },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Delete account error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

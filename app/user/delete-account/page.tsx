@@ -2,62 +2,66 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import supabase from "@/app/utils/supabase/client";
 import {
   Box,
-  Button,
   Card,
   CardContent,
-  Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  TextField,
   Typography,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Alert,
   CircularProgress,
   Chip,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
-import GoogleIcon from "@mui/icons-material/Google";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { createClient } from "@/app/utils/supabase/client";
+import { AlertTriangle } from "lucide-react";
+import checkUser from "@/app/actions/checkUser";
 
 export default function DeleteAccountPage() {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const supabase = createClient();
+  const [deletionPreview, setDeletionPreview] = useState<any>(null);
+
+  const handleClose = () => setShowModal(false);
 
   useEffect(() => {
-    checkUser();
+    isUserLogged();
+    loadDeletionPreview();
   }, []);
 
-  const checkUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      setUserEmail(user.email || "");
+  const isUserLogged = async () => {
+    const isLogged = await checkUser();
+    if (isLogged) {
       setCheckingAuth(false);
     } else {
-      // Redirect to login if not authenticated
-      router.push("/register?redirect=/delete-account");
+      router.push("/register");
+    }
+  };
+
+  const loadDeletionPreview = async () => {
+    try {
+      const { data, error } = await supabase.rpc("preview_account_deletion");
+      if (error) throw error;
+      if (data?.success) setDeletionPreview(data.summary);
+    } catch (err) {
+      console.error("Failed to load preview:", err);
     }
   };
 
   const handleClickOpen = () => {
-    setOpen(true);
-    setError("");
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setConfirmText("");
+    setShowModal(true);
     setError("");
   };
 
@@ -71,20 +75,18 @@ export default function DeleteAccountPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/delete-account", {
-        method: "DELETE",
-      });
+      const { data, error: rpcError } = await supabase.rpc(
+        "delete_user_account"
+      );
 
-      const data = await response.json();
+      if (rpcError) throw rpcError;
+      if (!data.success)
+        throw new Error(data.message || "Failed to delete account");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete account");
-      }
-
-      // Sign out and redirect
       await supabase.auth.signOut();
-      router.push("/register?deleted=true");
+      router.push("/account-deleted");
     } catch (err) {
+      console.log(err);
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
     }
@@ -97,158 +99,147 @@ export default function DeleteAccountPage() {
 
   if (checkingAuth) {
     return (
-      <Container maxWidth="sm">
-        <Box
-          sx={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      </Container>
-    );
-  }
-
-  return (
-    <Container maxWidth="sm">
       <Box
         sx={{
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          py: 4,
         }}
       >
-        <Card sx={{ width: "100%" }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ textAlign: "center", mb: 3 }}>
-              <WarningAmberIcon
-                sx={{ fontSize: 60, color: "error.main", mb: 2 }}
-              />
-              <Typography variant="h4" component="h1" gutterBottom>
-                Delete Account
-              </Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 2,
+        bgcolor: "grey.50",
+      }}
+    >
+      <Card sx={{ maxWidth: 700, width: "100%" }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ textAlign: "center", mb: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  borderRadius: "50%",
+                  bgcolor: "error.light",
+                  p: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AlertTriangle size={48} color="#d32f2f" />
+              </Box>
             </Box>
 
-            {userEmail && (
-              <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                <Chip
-                  icon={<GoogleIcon />}
-                  label={userEmail}
-                  variant="outlined"
-                  color="primary"
-                />
-              </Box>
-            )}
-
-            <Typography variant="body1" color="text.secondary" paragraph>
-              This action cannot be undone. Deleting your account will:
+            <Typography variant="h3" gutterBottom>
+              Delete Account
             </Typography>
 
-            <Box component="ul" sx={{ pl: 2, mb: 3 }}>
-              <Typography
-                component="li"
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Permanently delete your profile and all associated data
-              </Typography>
-              <Typography
-                component="li"
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Remove all your records from our system
-              </Typography>
-              <Typography
-                component="li"
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Disconnect your Google account from this service
-              </Typography>
-              <Typography
-                component="li"
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Sign you out of all devices immediately
-              </Typography>
-            </Box>
+            {userEmail && <Chip label={userEmail} sx={{ mt: 2 }} />}
+          </Box>
 
-            <Alert severity="error" sx={{ mb: 3 }}>
-              <strong>Warning:</strong> This action is permanent and
-              irreversible. All your data will be lost forever.
+          {deletionPreview && (
+            <Alert severity="error">
+              <Typography variant="subtitle2" gutterBottom>
+                <strong>The following will be permanently deleted:</strong>
+              </Typography>
+
+              <List dense>
+                <ListItem disablePadding>
+                  <ListItemText
+                    primary={`• Your profile (${deletionPreview.role})`}
+                  />
+                </ListItem>
+
+                {deletionPreview.appointments > 0 && (
+                  <ListItem disablePadding>
+                    <ListItemText
+                      primary={`• ${deletionPreview.appointments} appointment(s)`}
+                    />
+                  </ListItem>
+                )}
+
+                {deletionPreview.reviews > 0 && (
+                  <ListItem disablePadding>
+                    <ListItemText
+                      primary={`• ${deletionPreview.reviews} review(s)`}
+                    />
+                  </ListItem>
+                )}
+
+                {deletionPreview.notifications > 0 && (
+                  <ListItem disablePadding>
+                    <ListItemText
+                      primary={`• ${deletionPreview.notifications} notification(s)`}
+                    />
+                  </ListItem>
+                )}
+              </List>
             </Alert>
+          )}
 
-            <Box sx={{ display: "flex", gap: 2, flexDirection: "column" }}>
-              <Button
-                variant="contained"
-                color="error"
-                size="large"
-                fullWidth
-                onClick={handleClickOpen}
-                startIcon={<WarningAmberIcon />}
-              >
-                Delete My Account Permanently
-              </Button>
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Warning:</strong> This action is permanent and irreversible.
+          </Alert>
 
-              <Button
-                variant="outlined"
-                size="large"
-                fullWidth
-                onClick={handleSignOut}
-              >
-                Sign Out Instead
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
+          {error && <Alert severity="error">{error}</Alert>}
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 3 }}>
+            <Button
+              variant="contained"
+              color="error"
+              size="large"
+              onClick={handleClickOpen}
+            >
+              Delete My Account Permanently
+            </Button>
+
+            <Button variant="outlined" size="large" onClick={handleSignOut}>
+              Sign Out Instead
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showModal} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <WarningAmberIcon color="error" />
-            <span>Confirm Account Deletion</span>
+            <AlertTriangle size={24} color="#d32f2f" />
+            Final Confirmation Required
           </Box>
         </DialogTitle>
+
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            You are about to permanently delete your account ({userEmail}) that
-            is connected via Google.
-          </DialogContentText>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            You are about to permanently delete your account ({userEmail}). This
+            action cannot be undone.
+          </Typography>
 
-          <DialogContentText sx={{ mb: 2 }}>
-            This will remove all your data and cannot be undone.
-          </DialogContentText>
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="body2" gutterBottom>
+              Type <strong style={{ color: "#d32f2f" }}>DELETE</strong> to
+              confirm:
+            </Typography>
 
-          <DialogContentText sx={{ mb: 2, fontWeight: "bold" }}>
-            Type <span style={{ color: "red" }}>DELETE</span> to confirm:
-          </DialogContentText>
-
-          <TextField
-            autoFocus
-            fullWidth
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
-            placeholder="Type DELETE"
-            disabled={loading}
-            error={!!error && confirmText !== "DELETE"}
-            helperText={
-              confirmText && confirmText !== "DELETE"
-                ? "Must type DELETE exactly"
-                : ""
-            }
-          />
+            <TextField
+              fullWidth
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+              placeholder="Type DELETE"
+              autoComplete="off"
+              error={confirmText !== "" && confirmText !== "DELETE"}
+            />
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
@@ -256,21 +247,23 @@ export default function DeleteAccountPage() {
             </Alert>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+
+        <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
+
           <Button
-            onClick={handleDeleteAccount}
-            color="error"
             variant="contained"
+            color="error"
+            onClick={handleDeleteAccount}
             disabled={loading || confirmText !== "DELETE"}
-            startIcon={loading ? <CircularProgress size={20} /> : null}
+            startIcon={loading && <CircularProgress size={20} />}
           >
-            {loading ? "Deleting Account..." : "Delete Account Forever"}
+            {loading ? "Deleting..." : "Delete Forever"}
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 }

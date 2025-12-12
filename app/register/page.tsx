@@ -36,8 +36,11 @@ import {
   uploadDoctorProfile,
 } from "../actions/uploadProfile";
 import AlreadyRegistered from "./AlreadyRegistered";
-import router from "next/router";
-
+import { useRouter } from "next/navigation";
+import { cookies } from "next/headers";
+import { googleLoginAction } from "../actions/loginWithGoogle";
+import GoogleButton from "./GoogleLogin";
+import supabase from "@/app/utils/supabase/client";
 const steps = [
   "Email Verification",
   "Confirm Code",
@@ -54,20 +57,8 @@ export default function DoctorSignupPage() {
   );
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    async function getSupabase() {
-      const supabase = await createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(session?.access_token ?? "");
-      console.log(user);
-    }
-    getSupabase();
-  }, []);
   const {
     currentStep,
     loading,
@@ -89,36 +80,50 @@ export default function DoctorSignupPage() {
     }
   };
 
-  const signInWithGoogle = async () => {
-    try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect=/user/delete-account`,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-          // Force PKCE flow
-          skipBrowserRedirect: false,
-        },
-      });
+      if (accessToken && refreshToken) {
+        console.log("[v0] Processing OAuth callback with tokens from hash");
 
-      if (error) {
-        console.error("Google sign-in error:", error);
-        alert("Failed to sign in with Google. Please try again.");
+        try {
+          // Set the session using the tokens from the hash
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) throw error;
+
+          console.log("[v0] Session established successfully:", {
+            hasSession: !!data.session,
+            hasUser: !!data.user,
+            email: data.user?.email,
+          });
+
+          // Check if this was a reauth flow
+          const reauth = hashParams.get("reauth");
+
+          // Clear the hash from URL
+          window.history.replaceState(null, "", window.location.pathname);
+
+          // Redirect based on flow type
+          if (reauth === "true") {
+            router.push("/user/delete-account?reauth=true");
+          } else {
+            router.push("/");
+          }
+        } catch (err) {
+          console.error("[v0] Error setting session:", err);
+        }
       }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      alert("An error occurred during sign-in");
-    }
-  };
+    };
 
+    handleOAuthCallback();
+  }, [supabase.auth, router]);
   const handleBack = () => {
     setSlideDirection("right");
     setCurrentStep(Math.max(currentStep - 1, 1));
@@ -256,9 +261,9 @@ export default function DoctorSignupPage() {
   const renderStepContent = () => {
     useEffect(() => {
       const registered = localStorage.getItem("registered")!;
-      console.log(registered);
       if (!registered) {
         setIsRegistered(true);
+        localStorage.removeItem("doctor-signup-storage");
       }
     }, []);
     if (!isRegistered) {
@@ -528,12 +533,7 @@ export default function DoctorSignupPage() {
                   )}
                 </Grid>
               </Grid>
-              <Button
-                onClick={async () => signInWithGoogle()}
-                variant="outlined"
-              >
-                Delete Account
-              </Button>
+              <GoogleButton />
             </CardContent>
           </Card>
         </Fade>

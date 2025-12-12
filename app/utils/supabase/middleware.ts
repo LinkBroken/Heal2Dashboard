@@ -1,102 +1,78 @@
+import { NextResponse, NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
+        get: (name) => request.cookies.get(name)?.value,
+        set: (name, value, options) => {
+          response.cookies.set({ name, value, ...options });
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+        remove: (name, options) => {
+          response.cookies.set({ name, value: "", ...options });
         },
       },
     }
   );
 
-  // IMPORTANT: This refreshes the session and sets cookies properly
+  // 👇 FIXED: Added /user/delete-account
+  const isPublicPath =
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/register") ||
+    request.nextUrl.pathname.startsWith("/api") ||
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.startsWith("/user/delete-account") ||
+    request.nextUrl.pathname === "/account-deleted";
+
+  if (isPublicPath) return response;
+
+  // --- AUTH CHECK ---
   const {
     data: { user },
-    error,
   } = await supabase.auth.getUser();
 
-  console.log("=== MIDDLEWARE ===");
-  console.log("Path:", request.nextUrl.pathname);
-  console.log("User:", user?.email || "null");
-  console.log(
-    "Cookies:",
-    request.cookies
-      .getAll()
-      .map((c) => c.name)
-      .join(", ")
-  );
-
-  // Allow auth callback to process without interference
-  if (request.nextUrl.pathname.startsWith("/auth/callback")) {
-    console.log("Allowing auth callback to pass through");
-    return supabaseResponse;
+  if (!user) {
+    return NextResponse.redirect(new URL("/register", request.url));
   }
 
-  // Allow API routes to pass through
-  if (request.nextUrl.pathname.startsWith("/api/")) {
-    return supabaseResponse;
+  // --- GET PROFILE ---
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    return NextResponse.redirect(new URL("/register", request.url));
   }
 
-  // Handle delete account page - require authentication
-  if (request.nextUrl.pathname.startsWith("/user/delete-account")) {
-    if (!user) {
-      console.log("No user - redirecting to register");
-      const url = request.nextUrl.clone();
-      url.pathname = "/register";
-      url.searchParams.set("redirect", "/user/delete-account");
-      return NextResponse.redirect(url);
-    }
-    console.log("User authenticated - allowing delete-account access");
-    return supabaseResponse;
+  // --- ROLE LOGIC ---
+  switch (profile.role) {
+    case "admin":
+      if (request.nextUrl.pathname !== "/") {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+      break;
+
+    default:
+      if (!request.nextUrl.pathname.startsWith("/user/delete-account")) {
+        return NextResponse.redirect(
+          new URL("/user/delete-account", request.url)
+        );
+      }
+      break;
   }
 
-  // Get profile only if user exists
-  if (user) {
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    console.log("Profile:", profile?.first_name || "null");
-    if (profileError) console.log("Profile Error:", profileError.message);
-  }
-
-  // Redirect unauthenticated users to register (except for public pages)
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/admin/dashboard/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/register") &&
-    !request.nextUrl.pathname.startsWith("/_next") &&
-    !request.nextUrl.pathname.startsWith("/api")
-  ) {
-    console.log("No user found - redirecting to register");
-    const url = request.nextUrl.clone();
-    url.pathname = "/register";
-    return NextResponse.redirect(url);
-  }
-
-  console.log("=== MIDDLEWARE END ===");
-  return supabaseResponse;
+  return response;
 }
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};

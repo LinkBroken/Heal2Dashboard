@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Box, Typography, Alert, Fade, Button, TextField } from "@mui/material";
 import { VerifiedUser, Refresh } from "@mui/icons-material";
 import { useDoctorSignupStore } from "../../store/doctorSignupStore";
-import { createClient } from "@/app/utils/supabase/client";
+import supabase from "@/app/utils/supabase/client";
 
 export default function OTPStep() {
   const {
@@ -18,7 +18,6 @@ export default function OTPStep() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendLoading, setResendLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const supabase = createClient();
 
   useEffect(() => {
     // Focus on first input when component mounts

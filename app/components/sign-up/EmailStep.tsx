@@ -20,11 +20,9 @@ import {
   VisibilityOff,
 } from "@mui/icons-material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
-import { createClient } from "@/app/utils/supabase/client";
 import { useFormValidation } from "@/app/store/useFormValidation";
 import { emailStepSchema } from "@/app/utils/validation";
-
-const supabase = createClient();
+import supabase from "@/app/utils/supabase/client";
 
 export default function EmailStep() {
   const [showPassword, setShowPassword] = useState(false);

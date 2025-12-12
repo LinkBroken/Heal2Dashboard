@@ -273,6 +273,7 @@ export default function DoctorSignupPage() {
           onSupportClick={() => window.open("mailto:heal2gether.app@gmail.com")}
           onRegisterClick={() => {
             localStorage.removeItem("registered");
+            localStorage.removeItem("doctor-signup-storage");
             window.location.reload();
           }}
         />

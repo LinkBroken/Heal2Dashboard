@@ -43,6 +43,7 @@ export default function DeleteAccountPage() {
 
   const isUserLogged = async () => {
     const isLogged = await checkUser();
+    console.log(isLogged);
     if (isLogged) {
       setCheckingAuth(false);
     } else {
@@ -74,6 +75,8 @@ export default function DeleteAccountPage() {
     setLoading(true);
     setError("");
 
+    const { data: user } = await supabase.auth.getUser();
+    console.log(user);
     try {
       const { data, error: rpcError } = await supabase.rpc(
         "delete_user_account"

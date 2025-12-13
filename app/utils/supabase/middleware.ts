@@ -34,7 +34,7 @@ export async function proxy(request: NextRequest) {
     .single();
 
   if (!profile) {
-    return NextResponse.redirect(new URL("/register", request.url));
+    return;
   }
 
   // --- ROLE LOGIC ---

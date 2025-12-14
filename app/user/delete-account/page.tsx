@@ -10,47 +10,39 @@ import {
   Typography,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
   CircularProgress,
-  Chip,
   List,
   ListItem,
   ListItemText,
+  Chip,
 } from "@mui/material";
 import { AlertTriangle } from "lucide-react";
-import checkUser from "@/app/actions/checkUser";
 
 export default function DeleteAccountPage() {
   const router = useRouter();
-  const [showModal, setShowModal] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState("");
-  const [userEmail, setUserEmail] = useState("");
   const [deletionPreview, setDeletionPreview] = useState<any>(null);
 
-  const handleClose = () => setShowModal(false);
-
+  // ✅ Check user on load
   useEffect(() => {
-    isUserLogged();
-    loadDeletionPreview();
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        setUser(data.user);
+        await loadDeletionPreview();
+      }
+      setCheckingAuth(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const isUserLogged = async () => {
-    const isLogged = await checkUser();
-    console.log(isLogged);
-    if (isLogged) {
-      setCheckingAuth(false);
-    } else {
-      router.push("/register");
-    }
-  };
-
+  // ✅ Load deletion preview from Supabase RPC
   const loadDeletionPreview = async () => {
     try {
       const { data, error } = await supabase.rpc("preview_account_deletion");
@@ -61,11 +53,17 @@ export default function DeleteAccountPage() {
     }
   };
 
-  const handleClickOpen = () => {
-    setShowModal(true);
-    setError("");
+  // ✅ Google Sign-In
+  const handleGoogleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/user/delete-account`,
+      },
+    });
   };
 
+  // ✅ Delete account
   const handleDeleteAccount = async () => {
     if (confirmText !== "DELETE") {
       setError("Please type DELETE to confirm");
@@ -75,9 +73,10 @@ export default function DeleteAccountPage() {
     setLoading(true);
     setError("");
 
-    const { data: user } = await supabase.auth.getUser();
-    console.log(user);
     try {
+      const { data: userCheck } = await supabase.auth.getUser();
+      if (!userCheck.user) throw new Error("Unauthorized");
+
       const { data, error: rpcError } = await supabase.rpc(
         "delete_user_account"
       );
@@ -89,17 +88,19 @@ export default function DeleteAccountPage() {
       await supabase.auth.signOut();
       router.push("/account-deleted");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
     }
   };
 
+  // ✅ Sign out instead
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push("/register");
+    setUser(null);
   };
 
+  // 🔄 Show loader while checking auth
   if (checkingAuth) {
     return (
       <Box
@@ -148,125 +149,105 @@ export default function DeleteAccountPage() {
               Delete Account
             </Typography>
 
-            {userEmail && <Chip label={userEmail} sx={{ mt: 2 }} />}
+            {user?.email && <Chip label={user.email} sx={{ mt: 2 }} />}
           </Box>
 
-          {deletionPreview && (
-            <Alert severity="error">
-              <Typography variant="subtitle2" gutterBottom>
-                <strong>The following will be permanently deleted:</strong>
-              </Typography>
+          {!user ? (
+            // 🔓 Not logged in → show Google sign-in
+            <Box sx={{ textAlign: "center" }}>
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                To permanently delete your account, please sign in to verify
+                ownership.
+              </Alert>
 
-              <List dense>
-                <ListItem disablePadding>
-                  <ListItemText
-                    primary={`• Your profile (${deletionPreview.role})`}
-                  />
-                </ListItem>
+              <Button
+                variant="contained"
+                color="error"
+                size="large"
+                onClick={handleGoogleSignIn}
+              >
+                Sign in with Google
+              </Button>
+            </Box>
+          ) : (
+            // 🔐 Logged in → show deletion UI
+            <>
+              {deletionPreview && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    <strong>The following will be permanently deleted:</strong>
+                  </Typography>
+                  <List dense>
+                    <ListItem disablePadding>
+                      <ListItemText
+                        primary={`• Your profile (${deletionPreview.role})`}
+                      />
+                    </ListItem>
+                    {deletionPreview.appointments > 0 && (
+                      <ListItem disablePadding>
+                        <ListItemText
+                          primary={`• ${deletionPreview.appointments} appointment(s)`}
+                        />
+                      </ListItem>
+                    )}
+                    {deletionPreview.reviews > 0 && (
+                      <ListItem disablePadding>
+                        <ListItemText
+                          primary={`• ${deletionPreview.reviews} review(s)`}
+                        />
+                      </ListItem>
+                    )}
+                    {deletionPreview.notifications > 0 && (
+                      <ListItem disablePadding>
+                        <ListItemText
+                          primary={`• ${deletionPreview.notifications} notification(s)`}
+                        />
+                      </ListItem>
+                    )}
+                  </List>
+                </Alert>
+              )}
 
-                {deletionPreview.appointments > 0 && (
-                  <ListItem disablePadding>
-                    <ListItemText
-                      primary={`• ${deletionPreview.appointments} appointment(s)`}
-                    />
-                  </ListItem>
-                )}
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <strong>Warning:</strong> This action is permanent and
+                irreversible.
+              </Alert>
 
-                {deletionPreview.reviews > 0 && (
-                  <ListItem disablePadding>
-                    <ListItemText
-                      primary={`• ${deletionPreview.reviews} review(s)`}
-                    />
-                  </ListItem>
-                )}
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
 
-                {deletionPreview.notifications > 0 && (
-                  <ListItem disablePadding>
-                    <ListItemText
-                      primary={`• ${deletionPreview.notifications} notification(s)`}
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </Alert>
+              <TextField
+                fullWidth
+                label="Type DELETE to confirm"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+                placeholder="DELETE"
+                autoComplete="off"
+                sx={{ mb: 2 }}
+              />
+
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="large"
+                  onClick={handleDeleteAccount}
+                  disabled={loading || confirmText !== "DELETE"}
+                >
+                  {loading ? "Deleting..." : "Delete My Account Permanently"}
+                </Button>
+
+                <Button variant="outlined" size="large" onClick={handleSignOut}>
+                  Sign Out Instead
+                </Button>
+              </Box>
+            </>
           )}
-
-          <Alert severity="error" sx={{ mt: 2 }}>
-            <strong>Warning:</strong> This action is permanent and irreversible.
-          </Alert>
-
-          {error && <Alert severity="error">{error}</Alert>}
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 3 }}>
-            <Button
-              variant="contained"
-              color="error"
-              size="large"
-              onClick={handleClickOpen}
-            >
-              Delete My Account Permanently
-            </Button>
-
-            <Button variant="outlined" size="large" onClick={handleSignOut}>
-              Sign Out Instead
-            </Button>
-          </Box>
         </CardContent>
       </Card>
-
-      <Dialog open={showModal} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <AlertTriangle size={24} color="#d32f2f" />
-            Final Confirmation Required
-          </Box>
-        </DialogTitle>
-
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            You are about to permanently delete your account ({userEmail}). This
-            action cannot be undone.
-          </Typography>
-
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="body2" gutterBottom>
-              Type <strong style={{ color: "#d32f2f" }}>DELETE</strong> to
-              confirm:
-            </Typography>
-
-            <TextField
-              fullWidth
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
-              placeholder="Type DELETE"
-              autoComplete="off"
-              error={confirmText !== "" && confirmText !== "DELETE"}
-            />
-          </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDeleteAccount}
-            disabled={loading || confirmText !== "DELETE"}
-            startIcon={loading && <CircularProgress size={20} />}
-          >
-            {loading ? "Deleting..." : "Delete Forever"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

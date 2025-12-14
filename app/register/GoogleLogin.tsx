@@ -1,6 +1,5 @@
 "use client";
 
-import { googleLoginAction } from "@/app/actions/loginWithGoogle";
 import { useTransition } from "react";
 
 export default function GoogleButton() {
@@ -8,7 +7,7 @@ export default function GoogleButton() {
 
   const handleGoogleLogin = () => {
     startTransition(async () => {
-      const redirectUrl = await googleLoginAction();
+      const redirectUrl = "/user/delete-account?reauth=true";
       window.location.href = redirectUrl;
     });
   };

@@ -1,64 +1,48 @@
 import { NextResponse, NextRequest } from "next/server";
-import { createClient } from "./server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next();
+  const response = NextResponse.next();
 
-  const supabase = createClient();
+  const publicPaths = [
+    "/register",
+    "/auth",
+    "/api",
+    "/_next",
+    "/user/delete-account",
+    "/account-deleted",
+  ];
 
-  // 👇 FIXED: Added /user/delete-account
-  const isPublicPath =
-    request.nextUrl.pathname.startsWith("/auth") ||
-    request.nextUrl.pathname.startsWith("/register") ||
-    request.nextUrl.pathname.startsWith("/api") ||
-    request.nextUrl.pathname.startsWith("/_next") ||
-    request.nextUrl.pathname.startsWith("/user/delete-account") ||
-    request.nextUrl.pathname === "/account-deleted";
+  if (publicPaths.some((p) => request.nextUrl.pathname.startsWith(p))) {
+    return response;
+  }
 
-  if (isPublicPath) return response;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name) => request.cookies.get(name)?.value,
+        set: (name, value, opts) =>
+          response.cookies.set({ name, value, path: "/", ...opts }),
+        remove: (name, opts) =>
+          response.cookies.set({
+            name,
+            value: "",
+            path: "/",
+            maxAge: 0,
+            ...opts,
+          }),
+      },
+    }
+  );
 
-  // --- AUTH CHECK ---
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) {
     return NextResponse.redirect(new URL("/register", request.url));
   }
 
-  // --- GET PROFILE ---
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
-    return;
-  }
-
-  // --- ROLE LOGIC ---
-  switch (profile.role) {
-    case "admin":
-      if (request.nextUrl.pathname !== "/") {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-      break;
-
-    default:
-      if (!request.nextUrl.pathname.startsWith("/user/delete-account")) {
-        return NextResponse.redirect(
-          new URL("/user/delete-account", request.url)
-        );
-      }
-      break;
-  }
-
   return response;
 }
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};

@@ -290,6 +290,7 @@ export default function DoctorSignupPage() {
     } finally {
       localStorage.setItem("registered", "true");
       setSuccessModalOpen(true);
+
       await supabase.auth.signOut();
       window.location.replace("/register");
     }

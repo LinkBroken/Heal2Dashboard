@@ -1,118 +1,81 @@
 "use client";
 
 import React from "react";
-import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Card,
-  CardContent,
-} from "@mui/material";
-import { DashboardLayout } from "./components/Layout/DashboardLayout";
-import { StatsCards } from "./components/Dashboard/StatsCards";
-import { mockStats, mockNotifications } from "./data/mockData";
-import { TrendingUp, Users, Activity, Shield } from "lucide-react";
+import { Container, Typography, Box, Button, Paper } from "@mui/material";
+import Link from "next/link";
+import { PersonAdd } from "@mui/icons-material";
 
-export default function Dashboard() {
-  const quickStats = [
-    {
-      title: "System Health",
-      value: "98.5%",
-      icon: Activity,
-      color: "#059669",
-      bgColor: "#d1fae5",
-    },
-    {
-      title: "Active Users",
-      value: "1,234",
-      icon: Users,
-      color: "#2563eb",
-      bgColor: "#eff6ff",
-    },
-    {
-      title: "Growth Rate",
-      value: "+12.5%",
-      icon: TrendingUp,
-      color: "#059669",
-      bgColor: "#d1fae5",
-    },
-    {
-      title: "Security Score",
-      value: "95/100",
-      icon: Shield,
-      color: "#2563eb",
-      bgColor: "#eff6ff",
-    },
-  ];
+export default function Home() {
   return (
-    <DashboardLayout>
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h1" sx={{ mb: 1 }}>
-            Dashboard
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+        p: 2,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Paper
+          elevation={3}
+          sx={{
+            p: 5,
+            textAlign: "center",
+            borderRadius: 4,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              bgcolor: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h3" color="white" fontWeight="bold">
+              H
+            </Typography>
+          </Box>
+
+          <Typography variant="h3" component="h1" fontWeight="bold" gutterBottom>
+            Heal2Gether
           </Typography>
-          <Typography variant="body1" sx={{ color: "#64748b" }}>
-            Welcome back! Here's what's happening with your system today.
+
+          <Typography variant="body1" color="text.secondary" paragraph>
+            Welcome to Heal2Gether. Join our network of healthcare professionals today.
           </Typography>
-        </Box>
 
-        <StatsCards stats={mockStats} />
-
-        <Grid container spacing={3}>
-          {quickStats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              // @ts-ignore
-
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                      <Box
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          backgroundColor: stat.bgColor,
-                          mr: 2,
-                        }}
-                      >
-                        <Icon size={24} color={stat.color} />
-                      </Box>
-                      <Typography
-                        variant="h4"
-                        sx={{ fontWeight: 700, color: "#1e293b" }}
-                      >
-                        {stat.value}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "#64748b", fontWeight: 500 }}
-                    >
-                      {stat.title}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-
-        <Box sx={{ mt: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h5" sx={{ mb: 2 }}>
-                Recent Activity
-              </Typography>
-              <Typography variant="body1" sx={{ color: "#64748b" }}>
-                System is running smoothly. All services are operational and
-                performing within normal parameters.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
+          <Box sx={{ mt: 2, display: "flex", gap: 2, flexDirection: "column", width: "100%" }}>
+            <Link href="/register" passHref style={{ width: "100%" }}>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                startIcon={<PersonAdd />}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "1.1rem",
+                }}
+              >
+                Register as a Doctor
+              </Button>
+            </Link>
+          </Box>
+        </Paper>
       </Container>
-    </DashboardLayout>
+    </Box>
   );
 }

@@ -31,10 +31,7 @@ import {
   PersonAdd,
 } from "@mui/icons-material";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import {
-  UploadDoctorCertificate,
-  uploadDoctorProfile,
-} from "../actions/uploadProfile";
+
 import AlreadyRegistered from "./AlreadyRegistered";
 import { useRouter } from "next/navigation";
 import { cookies } from "next/headers";
@@ -58,7 +55,8 @@ export default function DoctorSignupPage() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const router = useRouter();
-
+  const Api = "https://heal2gether.ddns.free.com/api";
+  // const Api = "http://localhost:4000/api";
   const {
     currentStep,
     loading,
@@ -129,6 +127,44 @@ export default function DoctorSignupPage() {
     setCurrentStep(Math.max(currentStep - 1, 1));
   };
 
+  const base64ToBlob = (base64: string, mimeType: string) => {
+    const byteCharacters = atob(base64.split(",")[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  };
+
+  const uploadFileToBackend = async (
+    file: Blob,
+    fileName: string,
+    id: string,
+    type: "doctor" | "patient",
+    endpoint: string,
+    token: string
+  ) => {
+    const formData = new FormData();
+    formData.append("file", file, fileName);
+    formData.append("id", id);
+    formData.append("type", type);
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
+
+    return await response.json();
+  };
+
   const handleSubmit = async () => {
     console.log(currentStep);
     // if (!validateStep(currentStep)) return;
@@ -151,7 +187,7 @@ export default function DoctorSignupPage() {
     console.log(supabase);
     try {
       // Simulate API call to save doctor data to your database
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // await new Promise((resolve) => setTimeout(resolve, 2000));
       console.log(supabase);
       const {
         data: { user },
@@ -218,19 +254,28 @@ export default function DoctorSignupPage() {
           return;
         }
 
-        if (document) {
-          await UploadDoctorCertificate({
-            document: document,
-            userId: user?.id ?? "",
-          });
+        if (document && typeof document === "string") {
+          const documentBlob = base64ToBlob(document, "application/pdf");
+          await uploadFileToBackend(
+            documentBlob,
+            "certificate.pdf",
+            user?.id ?? "",
+            "doctor",
+            `${Api}/upload/document`,
+            session?.access_token ?? ""
+          );
         }
 
-        if (profileImage) {
-          console.log(profileImage, "image");
-          await uploadDoctorProfile({
-            image: profileImage,
-            userId: user?.id ?? "",
-          });
+        if (profileImage && typeof profileImage === "string") {
+          const imageBlob = base64ToBlob(profileImage, "image/png");
+          await uploadFileToBackend(
+            imageBlob,
+            "profile.png",
+            user?.id ?? "",
+            "doctor",
+            `${Api}/upload/formData`,
+            session?.access_token ?? ""
+          );
         }
         // console.log(id);
 

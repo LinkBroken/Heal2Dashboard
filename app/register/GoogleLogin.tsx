@@ -11,7 +11,7 @@ export default function GoogleButton() {
   const handleGoogleLogin = () => {
     startTransition(async () => {
       try {
-        const url = await googleLoginAction();
+        const url = await googleLoginAction("/register");
         if (url) {
           window.location.href = url;
         }

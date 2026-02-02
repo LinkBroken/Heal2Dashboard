@@ -33,19 +33,29 @@ export default function Home() {
         >
           <Box
             sx={{
-              width: 80,
-              height: 80,
+              width: 120,
+              height: 120,
               borderRadius: "50%",
-              bgcolor: "primary.main",
+              bgcolor: "white",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               mb: 2,
+              boxShadow: 3,
+              overflow: "hidden",
+              border: "2px solid",
+              borderColor: "primary.main",
             }}
           >
-            <Typography variant="h3" color="white" fontWeight="bold">
-              H
-            </Typography>
+            <img
+              src="/splash.png"
+              alt="Heal2Gether Logo"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
           </Box>
 
           <Typography variant="h3" component="h1" fontWeight="bold" gutterBottom>

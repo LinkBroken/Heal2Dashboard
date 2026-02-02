@@ -55,7 +55,7 @@ export default function DoctorSignupPage() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const router = useRouter();
-  const Api = "https://heal2gether.ddns.free.com/api";
+  const Api = process.env.NEXT_PUBLIC_BASE_URL;
   // const Api = "http://localhost:4000/api";
   const {
     currentStep,
@@ -70,6 +70,8 @@ export default function DoctorSignupPage() {
 
     profileImage,
     document,
+    setSession,
+    setEmailVerified,
   } = useDoctorSignupStore();
   const handleNext = () => {
     if (validateStep(currentStep)) {
@@ -112,7 +114,11 @@ export default function DoctorSignupPage() {
           if (reauth === "true") {
             router.push("/user/delete-account?reauth=true");
           } else {
-            router.push("/");
+            // Success! Jump to Step 3 for registration
+            setSession(data.session!);
+            setEmailVerified(true);
+            setCurrentStep(3);
+            console.log("[v0] Redirected to basic information step");
           }
         } catch (err) {
           console.error("[v0] Error setting session:", err);
@@ -122,6 +128,18 @@ export default function DoctorSignupPage() {
 
     handleOAuthCallback();
   }, [supabase.auth, router]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (currentStep > 1 && !successModalOpen) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [currentStep, successModalOpen]);
   const handleBack = () => {
     setSlideDirection("right");
     setCurrentStep(Math.max(currentStep - 1, 1));
@@ -280,6 +298,9 @@ export default function DoctorSignupPage() {
         // console.log(id);
 
         console.log(data);
+        localStorage.setItem("registered", "true");
+        setSuccessModalOpen(true);
+        await supabase.auth.signOut();
       } catch (error) {
         console.log(error);
         console.error("Doctor error:", error);
@@ -288,11 +309,8 @@ export default function DoctorSignupPage() {
       console.log(error);
       console.error("Registration error:", error);
     } finally {
-      localStorage.setItem("registered", "true");
-      setSuccessModalOpen(true);
-
-      await supabase.auth.signOut();
-      window.location.replace("/register");
+      setLoading(false);
+      // Removed window.location.replace("/register") to prevent page reload
     }
   };
 
@@ -404,16 +422,25 @@ export default function DoctorSignupPage() {
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: 80,
-                    height: 80,
+                    width: 100,
+                    height: 100,
                     borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    background: "white",
                     mb: 2,
                     boxShadow: theme.shadows[8],
+                    overflow: "hidden",
+                    border: "2px solid #667eea",
                   }}
                 >
-                  <PersonAdd sx={{ fontSize: 40, color: "white" }} />
+                  <img
+                    src="/splash.png"
+                    alt="Heal2Gether Logo"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                 </Box>
                 <Typography
                   variant="h4"
@@ -509,30 +536,30 @@ export default function DoctorSignupPage() {
 
               {/* Navigation Buttons */}
               <Grid container spacing={2} justifyContent="space-between">
-                <Grid item>
-                  {currentStep > 1 && (
-                    <Button
-                      onClick={handleBack}
-                      variant="outlined"
-                      startIcon={<ArrowBack />}
-                      disabled={loading}
-                      sx={{
-                        borderColor: "#667eea",
-                        color: "#667eea",
-                        px: 3,
-                        py: 1.5,
-                        borderRadius: 2,
-                        "&:hover": {
-                          borderColor: "#5a67d8",
-                          backgroundColor: "rgba(102, 126, 234, 0.04)",
-                        },
-                      }}
-                    >
-                      Previous
-                    </Button>
-                  )}
-                </Grid>
-                <Grid item>
+                  <Grid>
+                    {currentStep > 1 && (
+                      <Button
+                        onClick={handleBack}
+                        variant="outlined"
+                        startIcon={<ArrowBack />}
+                        disabled={loading}
+                        sx={{
+                          borderColor: "#667eea",
+                          color: "#667eea",
+                          px: 3,
+                          py: 1.5,
+                          borderRadius: 2,
+                          "&:hover": {
+                            borderColor: "#5a67d8",
+                            backgroundColor: "rgba(102, 126, 234, 0.04)",
+                          },
+                        }}
+                      >
+                        Previous
+                      </Button>
+                    )}
+                  </Grid>
+                  <Grid>
                   {currentStep < 5 ? (
                     <Button
                       onClick={handleNext}

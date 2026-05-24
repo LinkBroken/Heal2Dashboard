@@ -163,7 +163,7 @@ export default function TermsAndConditions() {
       color: "gray",
       points: [
         "To the maximum extent permitted by law:",
-        "Heal2gether and its providers are not liable for any adverse outcomes resulting from your decisions, actions, or failure to act after a call.",
+        "Zygoና and its providers are not liable for any adverse outcomes resulting from your decisions, actions, or failure to act after a call.",
         "You accept full responsibility for your choices regarding your health.",
       ],
     },
@@ -183,7 +183,7 @@ export default function TermsAndConditions() {
       color: "indigo",
       points: [
         "For questions regarding these Terms & Conditions or Privacy Policy, please contact us at:",
-        "Heal2gether@gmail.com",
+        "heal2gether.app@gmail.com",
       ],
     },
   ];
@@ -275,7 +275,7 @@ export default function TermsAndConditions() {
                   }}
                   sx={{ opacity: 0.95 }}
                 >
-                  Welcome to Heal2gether ("we," "our," or "us"). By using our
+                  Welcome to Zygoና ("we," "our," or "us"). By using our
                   consultation services, you agree to the following Terms &
                   Conditions.
                 </Typography>
@@ -405,7 +405,7 @@ export default function TermsAndConditions() {
               }}
             >
               <Typography variant="body2" color="text.secondary">
-                © 2025 Heal2gether. All rights reserved.
+                © 2025 Zygoና. All rights reserved.
               </Typography>
             </Box>
           </Paper>

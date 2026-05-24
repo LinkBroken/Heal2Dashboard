@@ -537,7 +537,7 @@ export default function ProfessionalInfoStep() {
             fullWidth
             multiline
             rows={4}
-            label="Why heal2gether"
+            label="Why Zygoና"
             placeholder="Tell us why you want to join our platform..."
             value={formData.join_reason || ""}
             onChange={(e) => handleFieldChange("join_reason", e.target.value)}

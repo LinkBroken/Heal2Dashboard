@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
     "/register",
     "/auth",
     "/api",
-    "/_next",
+    "/upload",
     "/user/delete-account",
     "/account-deleted",
   ];

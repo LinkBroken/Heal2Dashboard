@@ -34,8 +34,6 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 import AlreadyRegistered from "./AlreadyRegistered";
 import { useRouter } from "next/navigation";
-import { cookies } from "next/headers";
-import { googleLoginAction } from "../actions/loginWithGoogle";
 import GoogleButton from "./GoogleLogin";
 import supabase from "@/app/utils/supabase/client";
 const steps = [
@@ -55,8 +53,16 @@ export default function DoctorSignupPage() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const router = useRouter();
-  const Api = process.env.NEXT_PUBLIC_BASE_URL;
-  // const Api = "http://localhost:4000/api";
+
+  // Robust API fallback: ensure it's not "undefined" and always points to the backend
+  const Api = (process.env.NEXT_PUBLIC_BASE_URL && process.env.NEXT_PUBLIC_BASE_URL !== "undefined")
+    ? process.env.NEXT_PUBLIC_BASE_URL
+    : "https://heal2gether.ddnsfree.com/api";
+
+  useEffect(() => {
+    console.log("[Registration] Current API Endpoint:", Api);
+  }, [Api]);
+
   const {
     currentStep,
     loading,
@@ -191,58 +197,38 @@ export default function DoctorSignupPage() {
       return;
     }
     setLoading(true);
-    const supabase = new SupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-        },
-      }
-    );
-    console.log(supabase);
-    try {
-      // Simulate API call to save doctor data to your database
-      // await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log(supabase);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(session?.access_token ?? "");
 
-      console.log(user);
+    try {
       console.log("Doctor registration data:", formData);
       const profileData = {
-        id: user?.id,
+        id: session?.user?.id,
         first_name: formData.firstName,
         last_name: formData.lastName,
         role: "doctor",
         status: "pending",
         languages: formData.languages,
       };
+
+      // Use upsert to avoid duplicate key errors
       const { error } = await supabase
         .from("profiles")
-        .insert(profileData)
-        .eq("id", user?.id);
+        .upsert(profileData);
 
-      console.log(error?.code);
-      if (error?.code) {
-        console.error("Registration error:", error);
-        alert("Registration failed. Please try again.");
+      if (error) {
+        console.error("Profile registration error:", error);
+        alert(`Profile registration failed: ${error.message}`);
         return;
       }
       try {
         const doctorData = {
-          id: user?.id,
+          id: session?.user?.id,
           name: `${formData.firstName} ${formData.lastName}`,
           specialty: formData.specialization || "General",
           doctor_type: formData.doctorType,
           location: formData.address,
-          phone: `${
-            formData.countryCode ? formData.countryCode.replace("+", "00") : ""
-          }${formData.phone}`,
-          email: user?.email,
+          phone: `${formData.countryCode ? formData.countryCode.replace("+", "00") : ""
+            }${formData.phone}`,
+          email: session?.user?.email,
           date_of_birth: formData.dateOfBirth,
           rating: 0,
           experience: formData.experience,
@@ -250,9 +236,9 @@ export default function DoctorSignupPage() {
           status: "pending",
           license_number: formData.licenseNumber
             ? formData.licenseNumber
-            : formData.specialty,
+            : formData.specialization,
           gender: formData.gender?.toLowerCase(),
-          profile_id: user?.id,
+          profile_id: session?.user?.id,
           skills: formData.skills,
           emergency_number: formData.emergencyNumber,
           join_reason: formData.join_reason,
@@ -260,15 +246,13 @@ export default function DoctorSignupPage() {
           allowed_countries: formData.allowedCountries,
         };
 
-        const { data, error: doctorError } = await supabase
+        const { error: doctorError } = await supabase
           .from("doctors")
-          .insert([doctorData])
-          .eq("id", user?.id);
+          .upsert(doctorData);
 
-        console.log(doctorError);
         if (doctorError) {
-          console.error("Registration error:", doctorError);
-          alert("Registration failed. Please try again.");
+          console.error("Doctor details registration error:", doctorError);
+          alert(`Doctor details registration failed: ${doctorError.message}`);
           return;
         }
 
@@ -277,7 +261,7 @@ export default function DoctorSignupPage() {
           await uploadFileToBackend(
             documentBlob,
             "certificate.pdf",
-            user?.id ?? "",
+            session?.user?.id ?? "",
             "doctor",
             `${Api}/upload/document`,
             session?.access_token ?? ""
@@ -289,7 +273,7 @@ export default function DoctorSignupPage() {
           await uploadFileToBackend(
             imageBlob,
             "profile.png",
-            user?.id ?? "",
+            session?.user?.id ?? "",
             "doctor",
             `${Api}/upload/formData`,
             session?.access_token ?? ""
@@ -297,7 +281,6 @@ export default function DoctorSignupPage() {
         }
         // console.log(id);
 
-        console.log(data);
         localStorage.setItem("registered", "true");
         setSuccessModalOpen(true);
         await supabase.auth.signOut();
@@ -433,8 +416,8 @@ export default function DoctorSignupPage() {
                   }}
                 >
                   <img
-                    src="/splash.png"
-                    alt="Heal2Gether Logo"
+                    src="/Zygona.jpg"
+                    alt="Zygona Logo"
                     style={{
                       width: "100%",
                       height: "100%",
@@ -499,8 +482,8 @@ export default function DoctorSignupPage() {
                               backgroundColor: completed
                                 ? "#16a34a"
                                 : active
-                                ? "#667eea"
-                                : "#e2e8f0",
+                                  ? "#667eea"
+                                  : "#e2e8f0",
                               color: completed || active ? "white" : "#64748b",
                               fontSize: "0.875rem",
                               fontWeight: 600,
@@ -536,30 +519,30 @@ export default function DoctorSignupPage() {
 
               {/* Navigation Buttons */}
               <Grid container spacing={2} justifyContent="space-between">
-                  <Grid>
-                    {currentStep > 1 && (
-                      <Button
-                        onClick={handleBack}
-                        variant="outlined"
-                        startIcon={<ArrowBack />}
-                        disabled={loading}
-                        sx={{
-                          borderColor: "#667eea",
-                          color: "#667eea",
-                          px: 3,
-                          py: 1.5,
-                          borderRadius: 2,
-                          "&:hover": {
-                            borderColor: "#5a67d8",
-                            backgroundColor: "rgba(102, 126, 234, 0.04)",
-                          },
-                        }}
-                      >
-                        Previous
-                      </Button>
-                    )}
-                  </Grid>
-                  <Grid>
+                <Grid>
+                  {currentStep > 1 && (
+                    <Button
+                      onClick={handleBack}
+                      variant="outlined"
+                      startIcon={<ArrowBack />}
+                      disabled={loading}
+                      sx={{
+                        borderColor: "#667eea",
+                        color: "#667eea",
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        "&:hover": {
+                          borderColor: "#5a67d8",
+                          backgroundColor: "rgba(102, 126, 234, 0.04)",
+                        },
+                      }}
+                    >
+                      Previous
+                    </Button>
+                  )}
+                </Grid>
+                <Grid>
                   {currentStep < 5 ? (
                     <Button
                       onClick={handleNext}

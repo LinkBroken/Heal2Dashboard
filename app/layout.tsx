@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "A professional notification management dashboard",
   keywords:
     "dashboard, notifications, appointments, schedules, users, admin, dashboard",
-  icons: "/splash.png",
+  icons: "/Zygona.jpg",
 };
 
 export default function RootLayout({

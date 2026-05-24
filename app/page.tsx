@@ -48,8 +48,8 @@ export default function Home() {
             }}
           >
             <img
-              src="/splash.png"
-              alt="Heal2Gether Logo"
+              src="/Zygona.jpg"
+              alt="Zygona Logo"
               style={{
                 width: "100%",
                 height: "100%",
@@ -59,11 +59,11 @@ export default function Home() {
           </Box>
 
           <Typography variant="h3" component="h1" fontWeight="bold" gutterBottom>
-            Heal2Gether
+            Zygona
           </Typography>
 
           <Typography variant="body1" color="text.secondary" paragraph>
-            Welcome to Heal2Gether. Join our network of healthcare professionals today.
+            Welcome to Zygona. Join our network of healthcare professionals today.
           </Typography>
 
           <Box sx={{ mt: 2, display: "flex", gap: 2, flexDirection: "column", width: "100%" }}>

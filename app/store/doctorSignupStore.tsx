@@ -65,6 +65,8 @@ interface DoctorSignupStore {
   setDocument: (document: string | null) => void;
   profileImage: string | null; // Changed from File to string for base64
   setProfileImage: (profileImage: string | null) => void;
+  signature: string | null; // base64 encoded signature image
+  setSignature: (signature: string | null) => void;
   isPhoneNumbeValid: boolean;
   setIsPhoneNumbeValid: (valid: boolean) => void;
 }
@@ -113,6 +115,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
       session: undefined,
       document: null,
       profileImage: null,
+      signature: null,
 
       setCurrentStep: (step) => set({ currentStep: step }),
       setLoading: (loading) => set({ loading }),
@@ -124,6 +127,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
       setSession: (session) => set({ session }),
       setDocument: (document) => set({ document }),
       setProfileImage: (profileImage) => set({ profileImage }),
+      setSignature: (signature) => set({ signature }),
 
       updateFormData: (data) =>
         set((state) => ({
@@ -176,7 +180,8 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
               formData.university.trim() !== "" &&
               formData.acceptedTerms === true &&
               document !== null &&
-              profileImage !== null;
+              profileImage !== null &&
+              get().signature !== null;
 
             if (formData.doctorType === "specialist") {
               return (
@@ -203,6 +208,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
           formData: initialFormData,
           document: null,
           profileImage: null,
+          signature: null,
         }),
     }),
     {
@@ -217,6 +223,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
         isPhoneNumbeValid: state.isPhoneNumbeValid,
         document: state.document, // Now it's base64 string, safe to persist
         profileImage: state.profileImage, // Now it's base64 string, safe to persist
+        signature: state.signature, // base64 signature image, safe to persist
         session: state.session,
         errors: state.errors,
         loading: state.loading,

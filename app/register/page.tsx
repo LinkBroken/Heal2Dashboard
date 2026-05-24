@@ -76,6 +76,7 @@ export default function DoctorSignupPage() {
 
     profileImage,
     document,
+    signature,
     setSession,
     setEmailVerified,
   } = useDoctorSignupStore();
@@ -161,6 +162,17 @@ export default function DoctorSignupPage() {
     return new Blob([byteArray], { type: mimeType });
   };
 
+  // Convert base64 data URL to a Postgres \x hex literal for bytea columns
+  const base64ToHex = (base64DataUrl: string): string => {
+    const base64 = base64DataUrl.split(",")[1];
+    const binary = atob(base64);
+    let hex = "\\x";
+    for (let i = 0; i < binary.length; i++) {
+      hex += binary.charCodeAt(i).toString(16).padStart(2, "0");
+    }
+    return hex;
+  };
+
   const uploadFileToBackend = async (
     file: Blob,
     fileName: string,
@@ -244,6 +256,7 @@ export default function DoctorSignupPage() {
           join_reason: formData.join_reason,
           university: formData.university,
           allowed_countries: formData.allowedCountries,
+          signature: signature ? base64ToHex(signature) : null,
         };
 
         const { error: doctorError } = await supabase

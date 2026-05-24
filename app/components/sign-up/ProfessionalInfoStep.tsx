@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Grid,
   TextField,
@@ -21,7 +21,7 @@ import {
   Button,
   Avatar,
 } from "@mui/material";
-import { Work, School, Star, Assignment, CloudDone } from "@mui/icons-material";
+import { Work, School, Star, Assignment, CloudDone, Draw, CheckCircleOutline, DeleteOutline } from "@mui/icons-material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
 import { UploadCloud as CloudUploadIcon } from "lucide-react";
 import styled from "@emotion/styled";
@@ -84,12 +84,91 @@ export default function ProfessionalInfoStep() {
     setDocument: setFile,
     profileImage,
     setProfileImage,
+    signature,
+    setSignature,
   } = useDoctorSignupStore();
 
   const { errors, validateField, setErrors } = useFormValidation(
     professionalInfoSchema
   );
   const [showOtherLicense, setShowOtherLicense] = useState(false);
+
+  // Signature pad state
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const [isSigned, setIsSigned] = useState(!!signature);
+
+  // Initialize canvas with existing signature (if any) on mount
+  useEffect(() => {
+    if (signature && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0);
+      img.src = signature;
+    }
+  }, []);
+
+  const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const handleCanvasPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      isDrawingRef.current = true;
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) return;
+      const { x, y } = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    },
+    []
+  );
+
+  const handleCanvasPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!isDrawingRef.current) return;
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) return;
+      const { x, y } = getPos(e);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = "#1a1a1a";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+    },
+    []
+  );
+
+  const handleCanvasPointerUp = useCallback(() => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    setSignature(dataUrl);
+    setIsSigned(true);
+  }, [setSignature]);
+
+  const handleClearSignature = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignature(null);
+    setIsSigned(false);
+  }, [setSignature]);
 
   const handleFieldChange = (field: string, value: any) => {
     updateFormData({ [field]: value });
@@ -607,6 +686,81 @@ export default function ProfessionalInfoStep() {
               </FormHelperText>
             )}
           </Grid>
+        </Grid>
+
+        {/* Signature Pad */}
+        <Grid item xs={12}>
+          <Box>
+            <Typography
+              variant="body1"
+              sx={{ fontWeight: 600, color: "#1a1a1a", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <Draw sx={{ fontSize: 20 }} />
+              Your Signature *
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+              Please draw your signature in the box below using your mouse or touch screen.
+            </Typography>
+            <Box
+              sx={{
+                border: isSigned ? "2px solid #16a34a" : "2px dashed #94a3b8",
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                position: "relative",
+                overflow: "hidden",
+                cursor: "crosshair",
+                touchAction: "none",
+              }}
+            >
+              <canvas
+                ref={canvasRef}
+                width={800}
+                height={200}
+                style={{ display: "block", width: "100%", height: 160 }}
+                onPointerDown={handleCanvasPointerDown}
+                onPointerMove={handleCanvasPointerMove}
+                onPointerUp={handleCanvasPointerUp}
+                onPointerLeave={handleCanvasPointerUp}
+              />
+              {!isSigned && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    color: "#94a3b8",
+                    pointerEvents: "none",
+                    userSelect: "none",
+                  }}
+                >
+                  Sign here...
+                </Typography>
+              )}
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, mt: 1, justifyContent: "flex-end" }}>
+              {isSigned && (
+                <Chip
+                  icon={<CheckCircleOutline />}
+                  label="Signature captured"
+                  color="success"
+                  size="small"
+                  variant="outlined"
+                />
+              )}
+              <Button
+                size="small"
+                startIcon={<DeleteOutline />}
+                onClick={handleClearSignature}
+                variant="outlined"
+                color="inherit"
+                sx={{ borderRadius: 2 }}
+              >
+                Clear
+              </Button>
+            </Box>
+          </Box>
         </Grid>
 
         {/* Terms and Conditions */}

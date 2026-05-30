@@ -61,6 +61,7 @@ const LICENSE_PROGRAMS = [
   "General Medical Council (GMC) - UK",
   "Australian Medical Council (AMC)",
   "Medical Council of India (MCI)",
+  "CV",
   "Other",
 ];
 
@@ -363,12 +364,12 @@ export default function ProfessionalInfoStep() {
         {formData.doctorType === "specialist" && (
           <Grid item xs={12}>
             <FormControl fullWidth error={!!errors.licenseNumber}>
-              <InputLabel>Medical License Program</InputLabel>
+              <InputLabel>Medical Licence / CV</InputLabel>
               <Select
                 value={
                   showOtherLicense ? "Other" : formData.licenseNumber || ""
                 }
-                label="Medical License Program"
+                label="Medical Licence / CV"
                 onChange={(e) => handleLicenseChange(e.target.value)}
                 startAdornment={
                   <InputAdornment position="start">
@@ -399,7 +400,7 @@ export default function ProfessionalInfoStep() {
             {showOtherLicense && (
               <TextField
                 fullWidth
-                label="Enter Your License Program"
+                label="Enter Your Licence Program / CV"
                 value={formData.licenseNumber || ""}
                 onChange={(e) =>
                   handleFieldChange("licenseNumber", e.target.value)
@@ -647,7 +648,7 @@ export default function ProfessionalInfoStep() {
               variant="body1"
               sx={{ fontWeight: 600, color: "#1a1a1a", mb: 2 }}
             >
-              Upload Your Medical License
+              Upload Your Medical Licence / CV
             </Typography>
             <CloudDone style={{ width: 100, height: 100, color: "#94a3b8" }} />
             <Button

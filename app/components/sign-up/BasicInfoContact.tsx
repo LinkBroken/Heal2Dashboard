@@ -253,9 +253,23 @@ export default function BasicInfoStep() {
             multiple
             value={formData.allowedCountries || []}
             label="Your Patients' Country"
-            onChange={(e) =>
-              handleFieldChange("allowedCountries", e.target.value as string[])
-            }
+            onChange={(e) => {
+              const value = e.target.value as string[];
+              if (value.includes("all")) {
+                if ((formData.allowedCountries || []).length === countryPhoneLengths.length) {
+                  // Deselect all
+                  handleFieldChange("allowedCountries", []);
+                } else {
+                  // Select all
+                  handleFieldChange(
+                    "allowedCountries",
+                    countryPhoneLengths.map((c) => c.code)
+                  );
+                }
+              } else {
+                handleFieldChange("allowedCountries", value);
+              }
+            }}
             renderValue={(selected) =>
               countryPhoneLengths
                 .filter((c) => (selected as string[]).includes(c.code))
@@ -272,6 +286,20 @@ export default function BasicInfoStep() {
               },
             }}
           >
+            <MenuItem value="all">
+              <Checkbox
+                checked={
+                  (formData.allowedCountries || []).length ===
+                  countryPhoneLengths.length
+                }
+                indeterminate={
+                  (formData.allowedCountries || []).length > 0 &&
+                  (formData.allowedCountries || []).length <
+                  countryPhoneLengths.length
+                }
+              />
+              <ListItemText primary="Select All" />
+            </MenuItem>
             {countryPhoneLengths.map((country) => (
               <MenuItem key={country.code} value={country.code}>
                 <Checkbox

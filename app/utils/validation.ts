@@ -39,7 +39,7 @@ export const documentFileSchema = z
   )
   .refine(
     (file) => ["application/pdf"].includes(file.type),
-    "Only PDF files are allowed for medical licenses"
+    "Only PDF files are allowed for medical licences / CV"
   );
 
 export const imageFileSchema = z

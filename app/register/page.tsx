@@ -604,7 +604,7 @@ export default function DoctorSignupPage() {
                   )}
                 </Grid>
               </Grid>
-              <GoogleButton />
+              {currentStep === 1 && !isEmailVerified && <GoogleButton />}
             </CardContent>
           </Card>
         </Fade>

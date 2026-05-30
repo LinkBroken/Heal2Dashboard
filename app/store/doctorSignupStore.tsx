@@ -37,6 +37,7 @@ interface FormData {
   join_reason?: string;
   university: string;
   allowedCountries?: string[];
+  consultationFee?: number;
 }
 
 interface Error {
@@ -99,6 +100,7 @@ const initialFormData: FormData = {
   join_reason: "",
   university: "",
   allowedCountries: [],
+  consultationFee: undefined,
 };
 
 export const useDoctorSignupStore = create<DoctorSignupStore>()(
@@ -155,7 +157,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
           case 2:
             return isEmailVerified;
           case 3:
-            return (
+            return !!(
               formData.firstName.trim() !== "" &&
               formData.lastName.trim() !== "" &&
               formData.dateOfBirth.trim() !== "" &&
@@ -166,7 +168,7 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
               formData.allowedCountries.length > 0
             );
           case 4:
-            return (
+            return !!(
               formData.phone.trim() !== "" &&
               formData.address.trim() !== "" &&
               formData.countryCode &&
@@ -183,15 +185,26 @@ export const useDoctorSignupStore = create<DoctorSignupStore>()(
               profileImage !== null &&
               get().signature !== null;
 
+            const fee = formData.consultationFee;
+            const feeValid =
+              fee !== undefined &&
+              !isNaN(fee) &&
+              (formData.doctorType === "gp"
+                ? fee >= 7 && fee <= 10
+                : formData.doctorType === "specialist"
+                  ? fee >= 10 && fee <= 15
+                  : true);
+
             if (formData.doctorType === "specialist") {
               return (
                 hasRequiredFields &&
+                feeValid &&
                 formData.specialization.trim() !== "" &&
                 formData.licenseNumber.trim() !== ""
               );
             }
 
-            return hasRequiredFields;
+            return hasRequiredFields && feeValid;
 
           default:
             return false;

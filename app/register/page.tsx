@@ -257,6 +257,7 @@ export default function DoctorSignupPage() {
           university: formData.university,
           allowed_countries: formData.allowedCountries,
           signature: signature ? base64ToHex(signature) : null,
+          consultation_fee: formData.consultationFee ?? null,
         };
 
         const { error: doctorError } = await supabase

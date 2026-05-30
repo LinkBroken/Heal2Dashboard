@@ -463,6 +463,55 @@ export default function ProfessionalInfoStep() {
           />
         </Grid>
 
+        {/* Consultation Fee */}
+        <Grid item xs={12} sm={6}>
+          {(() => {
+            const doctorType = formData.doctorType;
+            const min = doctorType === "gp" ? 7 : doctorType === "specialist" ? 10 : null;
+            const max = doctorType === "gp" ? 10 : doctorType === "specialist" ? 15 : null;
+            const fee = formData.consultationFee;
+            const isOutOfRange =
+              fee !== undefined &&
+              !isNaN(fee) &&
+              min !== null &&
+              max !== null &&
+              (fee < min || fee > max);
+            const helperText = isOutOfRange
+              ? `Must be between $${min} and $${max} for ${doctorType === "gp" ? "General Practitioner" : "Specialist"}`
+              : min !== null
+                ? `Allowed range: $${min} – $${max}`
+                : "";
+            return (
+              <TextField
+                required
+                fullWidth
+                type="number"
+                label="Consultation Fee (USD)"
+                value={fee !== undefined ? fee : ""}
+                onChange={(e) => {
+                  const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                  handleFieldChange("consultationFee", val);
+                }}
+                error={isOutOfRange}
+                helperText={helperText}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">$</InputAdornment>
+                  ),
+                  inputProps: { min: 1, max: 100, step: 0.5 },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "&:hover fieldset": { borderColor: "#667eea" },
+                    "&.Mui-focused fieldset": { borderColor: "#667eea" },
+                  },
+                }}
+              />
+            );
+          })()}
+        </Grid>
+
         {/* Skills */}
         <Grid item xs={12}>
           <TextField

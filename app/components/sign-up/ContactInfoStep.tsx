@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -14,7 +14,12 @@ import {
   FormHelperText,
 } from "@mui/material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
-import { countryPhoneLengths as countries } from "./countries";
+import {
+  getSupportedCountries,
+  validatePhoneNumber,
+  getDialCodeForCountry,
+  getMaxPhoneLengthForCountry,
+} from "@/app/utils/phoneUtils";
 import { useFormValidation } from "@/app/store/useFormValidation";
 import { contactInfoSchema } from "@/app/utils/validation";
 
@@ -22,37 +27,55 @@ export default function ContactInfoStep() {
   const { formData, updateFormData, setIsPhoneNumbeValid } =
     useDoctorSignupStore();
   const { errors, validateField } = useFormValidation(contactInfoSchema);
-  const [selectedCountryLength, setSelectedCountryLength] = React.useState(
-    countries[0].phoneLength
-  );
+  const [selectedCountryCode, setSelectedCountryCode] = React.useState("");
+  const [selectedDialCode, setSelectedDialCode] = React.useState("+1");
+  const [maxPhoneLength, setMaxPhoneLength] = React.useState(15);
+
+  // Memoize countries list to avoid recalculation on every render
+  const countries = useMemo(() => getSupportedCountries(), []);
+
+  // Initialize with first country on mount
+  useEffect(() => {
+    if (countries.length > 0 && !selectedCountryCode) {
+      const firstCountry = countries[0];
+      setSelectedCountryCode(firstCountry.code);
+      setSelectedDialCode(firstCountry.dial_code);
+      setMaxPhoneLength(getMaxPhoneLengthForCountry(firstCountry.code));
+    }
+  }, [countries, selectedCountryCode]);
 
   const handleFieldChange = (field: string, value: any) => {
     updateFormData({ [field]: value });
     validateField(field, value);
   };
 
-  const handlePhoneChange = (value: string) => {
-    const digits = value.replace(/[^0-9]/g, "");
-    const maxLen = Array.isArray(selectedCountryLength)
-      ? selectedCountryLength[selectedCountryLength.length - 1]
-      : selectedCountryLength;
-
-    // Only allow up to maxLen digits
-    const truncatedDigits = digits.slice(0, maxLen);
-
-    handleFieldChange("phone", truncatedDigits);
-
-    // Validate phone length
-    if (truncatedDigits.length === 0) {
+  const handleCountryChange = (dialCode: string) => {
+    const country = countries.find((c) => c.dial_code === dialCode);
+    if (country) {
+      setSelectedCountryCode(country.code);
+      setSelectedDialCode(dialCode);
+      setMaxPhoneLength(getMaxPhoneLengthForCountry(country.code));
       setIsPhoneNumbeValid(false);
-    } else if (Array.isArray(selectedCountryLength)) {
-      // Check if length matches any of the valid lengths
-      setIsPhoneNumbeValid(
-        selectedCountryLength.includes(truncatedDigits.length)
-      );
+      handleFieldChange("countryCode", dialCode);
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Only allow digits
+    const digits = value.replace(/[^0-9]/g, "");
+
+    handleFieldChange("phone", digits);
+
+    // Validate using libphonenumber-js
+    if (digits.length === 0) {
+      setIsPhoneNumbeValid(false);
     } else {
-      // Check if length matches the single valid length
-      setIsPhoneNumbeValid(truncatedDigits.length === selectedCountryLength);
+      const isValid = validatePhoneNumber(
+        digits,
+        selectedDialCode,
+        selectedCountryCode
+      );
+      setIsPhoneNumbeValid(isValid);
     }
   };
 
@@ -85,13 +108,7 @@ export default function ContactInfoStep() {
               <Select
                 required
                 value={formData.countryCode || ""}
-                onChange={(e) => {
-                  const country = countries.find(
-                    (c) => c.dial_code === e.target.value
-                  );
-                  setSelectedCountryLength(country?.phoneLength || 10);
-                  handleFieldChange("countryCode", e.target.value);
-                }}
+                onChange={(e) => handleCountryChange(e.target.value)}
                 sx={{
                   borderRadius: 2,
                   "& .MuiOutlinedInput-root": {
@@ -104,7 +121,7 @@ export default function ContactInfoStep() {
                 }}
               >
                 {countries.map((c) => (
-                  <MenuItem key={c.name} value={c.dial_code}>
+                  <MenuItem key={c.code} value={c.dial_code}>
                     {c.name} ({c.dial_code})
                   </MenuItem>
                 ))}
@@ -124,6 +141,7 @@ export default function ContactInfoStep() {
               required
               helperText={errors.phone}
               error={!!errors.phone}
+              placeholder="Enter digits only"
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
@@ -138,11 +156,9 @@ export default function ContactInfoStep() {
                   color: "#667eea",
                 },
               }}
-              slotProps={{
-                htmlInput: {
-                  minLength: 5,
-                  maxLength: selectedCountryLength,
-                },
+              inputProps={{
+                minLength: 6,
+                maxLength: maxPhoneLength,
               }}
             />
           </Grid>

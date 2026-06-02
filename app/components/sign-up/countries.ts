@@ -1,3 +1,19 @@
+/**
+ * @deprecated This file is deprecated. Use `@/app/utils/phoneUtils.ts` instead.
+ * 
+ * The phoneUtils.ts module now provides all country data and phone validation
+ * using libphonenumber-js, which is the authoritative source for international
+ * phone number handling.
+ * 
+ * Migration guide:
+ * - Replace imports from './countries.ts' with '@/app/utils/phoneUtils.ts'
+ * - Use getSupportedCountries() instead of countryPhoneLengths
+ * - Use validatePhoneNumber() for phone validation
+ * - Use getDialCodeForCountry() to get dial codes
+ * 
+ * This file will be removed in a future release.
+ */
+
 export const countryPhoneLengths = [
   { code: "AD", name: "Andorra", dial_code: "+376", phoneLength: 6 },
   {

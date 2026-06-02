@@ -79,7 +79,25 @@ export default function DoctorSignupPage() {
     signature,
     setSession,
     setEmailVerified,
+    updateFormData,
+    setIsPhoneNumbeValid,
   } = useDoctorSignupStore();
+
+  const jumpToContactStep = () => {
+    updateFormData({
+      email: "dev@test.com",
+      password: "Dev1234!",
+      firstName: "Dev",
+      lastName: "Doctor",
+      dateOfBirth: "1990-01-01",
+      gender: "male",
+      languages: ["English"],
+      allowedCountries: ["IL"],
+    });
+    setEmailVerified(true);
+    setIsPhoneNumbeValid(false);
+    setCurrentStep(4);
+  };
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setSlideDirection("left");
@@ -605,6 +623,28 @@ export default function DoctorSignupPage() {
                 </Grid>
               </Grid>
               {currentStep === 1 && !isEmailVerified && <GoogleButton />}
+              {/* Disabled Debug: Skip to Contact Step */}
+              {/* 
+              process.env.NODE_ENV === "development" && (
+                <Box sx={{ mt: 2, textAlign: "center" }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={jumpToContactStep}
+                    sx={{
+                      borderColor: "#f59e0b",
+                      color: "#f59e0b",
+                      fontSize: "0.75rem",
+                      py: 0.5,
+                      px: 2,
+                      borderRadius: 2,
+                      "&:hover": { borderColor: "#d97706", backgroundColor: "rgba(245,158,11,0.05)" },
+                    }}
+                  >
+                    ⚡ DEV: Skip to Contact Step
+                  </Button>
+                </Box>
+              )*/}
             </CardContent>
           </Card>
         </Fade>

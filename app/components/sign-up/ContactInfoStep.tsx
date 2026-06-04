@@ -14,12 +14,7 @@ import {
   FormHelperText,
 } from "@mui/material";
 import { useDoctorSignupStore } from "@/app/store/doctorSignupStore";
-import {
-  getSupportedCountries,
-  validatePhoneNumber,
-  getDialCodeForCountry,
-  getMaxPhoneLengthForCountry,
-} from "@/app/utils/phoneUtils";
+import { getSupportedCountries } from "@/app/utils/phoneUtils";
 import { useFormValidation } from "@/app/store/useFormValidation";
 import { contactInfoSchema } from "@/app/utils/validation";
 
@@ -28,8 +23,7 @@ export default function ContactInfoStep() {
     useDoctorSignupStore();
   const { errors, validateField } = useFormValidation(contactInfoSchema);
   const [selectedCountryCode, setSelectedCountryCode] = React.useState("");
-  const [selectedDialCode, setSelectedDialCode] = React.useState("+1");
-  const [maxPhoneLength, setMaxPhoneLength] = React.useState(15);
+
 
   // Memoize countries list to avoid recalculation on every render
   const countries = useMemo(() => getSupportedCountries(), []);
@@ -39,8 +33,7 @@ export default function ContactInfoStep() {
     if (countries.length > 0 && !selectedCountryCode) {
       const firstCountry = countries[0];
       setSelectedCountryCode(firstCountry.code);
-      setSelectedDialCode(firstCountry.dial_code);
-      setMaxPhoneLength(getMaxPhoneLengthForCountry(firstCountry.code));
+
     }
   }, [countries, selectedCountryCode]);
 
@@ -53,8 +46,7 @@ export default function ContactInfoStep() {
     const country = countries.find((c) => c.dial_code === dialCode);
     if (country) {
       setSelectedCountryCode(country.code);
-      setSelectedDialCode(dialCode);
-      setMaxPhoneLength(getMaxPhoneLengthForCountry(country.code));
+
       setIsPhoneNumbeValid(false);
       handleFieldChange("countryCode", dialCode);
     }
@@ -66,17 +58,7 @@ export default function ContactInfoStep() {
 
     handleFieldChange("phone", digits);
 
-    // Validate using libphonenumber-js
-    if (digits.length === 0) {
-      setIsPhoneNumbeValid(false);
-    } else {
-      const isValid = validatePhoneNumber(
-        digits,
-        selectedDialCode,
-        selectedCountryCode
-      );
-      setIsPhoneNumbeValid(isValid);
-    }
+    setIsPhoneNumbeValid(digits.length >= 6 && digits.length <= 15);
   };
 
   return (
@@ -158,7 +140,7 @@ export default function ContactInfoStep() {
               }}
               inputProps={{
                 minLength: 6,
-                maxLength: maxPhoneLength,
+                maxLength: 15,
               }}
             />
           </Grid>

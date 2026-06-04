@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { isValidPhoneNumber } from "libphonenumber-js";
-
 // Basic validation schemas
 export const emailSchema = z
   .string()

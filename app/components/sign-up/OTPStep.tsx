@@ -4,6 +4,8 @@ import { VerifiedUser, Refresh } from "@mui/icons-material";
 import { useDoctorSignupStore } from "../../store/doctorSignupStore";
 import supabase from "@/app/utils/supabase/client";
 
+const RESEND_COOLDOWN = 60;
+
 export default function OTPStep() {
   const {
     formData,
@@ -17,11 +19,32 @@ export default function OTPStep() {
   } = useDoctorSignupStore();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendLoading, setResendLoading] = useState(false);
+  const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCountdown = () => {
+    setCountdown(RESEND_COOLDOWN);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   useEffect(() => {
     // Focus on first input when component mounts
     inputRefs.current[0]?.focus();
+    // Start cooldown immediately so user must wait before first resend
+    startCountdown();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   const handleOtpChange = (index: number, value: string) => {
@@ -71,7 +94,7 @@ export default function OTPStep() {
         setError(verifyError.message);
       } else {
         setEmailVerified(true);
-        setSession(session.session);
+        if (session.session) setSession(session.session);
 
         // The user will automatically proceed to next step via the parent component
       }
@@ -98,6 +121,7 @@ export default function OTPStep() {
       } else {
         setOtp(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
+        startCountdown();
       }
     } catch (err: any) {
       setError("Failed to resend code. Please try again.");
@@ -196,17 +220,22 @@ export default function OTPStep() {
           fullWidth
           variant="text"
           onClick={handleResendOTP}
-          disabled={resendLoading}
+          disabled={resendLoading || countdown > 0}
           startIcon={<Refresh />}
           sx={{
-            color: "#667eea",
+            color: countdown > 0 ? "#94a3b8" : "#667eea",
             textTransform: "none",
             "&:hover": {
-              backgroundColor: "rgba(102, 126, 234, 0.04)",
+              backgroundColor:
+                countdown > 0 ? "transparent" : "rgba(102, 126, 234, 0.04)",
             },
           }}
         >
-          {resendLoading ? "Resending..." : "Resend Code"}
+          {resendLoading
+            ? "Resending..."
+            : countdown > 0
+              ? `Resend in ${countdown}s`
+              : "Resend Code"}
         </Button>
       </Box>
     </Fade>

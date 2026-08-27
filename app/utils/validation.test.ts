@@ -98,12 +98,12 @@ describe("phoneSchema", () => {
     ok(phoneSchema, "5551234567");
   });
 
-  it("rejects 5 digits — too short", () => {
-    fail(phoneSchema, "12345", "Phone number must be at least 6 digits");
+  it("accepts short numbers", () => {
+    ok(phoneSchema, "12345");
   });
 
-  it("rejects 16 digits — too long", () => {
-    fail(phoneSchema, "1234567890123456", "Phone number cannot exceed 15 digits");
+  it("accepts long numbers", () => {
+    ok(phoneSchema, "1234567890123456");
   });
 
   it("rejects non-digits", () => {
@@ -115,7 +115,7 @@ describe("phoneSchema", () => {
   });
 
   it("rejects empty string", () => {
-    fail(phoneSchema, "", "Phone number must be at least 6 digits");
+    fail(phoneSchema, "", "Phone number is required");
   });
 });
 
@@ -276,8 +276,8 @@ describe("contactInfoSchema", () => {
     fail(contactInfoSchema, { ...valid, countryCode: "" }, "Please select a country code");
   });
 
-  it("rejects phone too short", () => {
-    fail(contactInfoSchema, { ...valid, phone: "12345" }, "Phone number must be at least 6 digits");
+  it("accepts short phone numbers", () => {
+    ok(contactInfoSchema, { ...valid, phone: "12345" });
   });
 
   it("rejects phone with dashes", () => {

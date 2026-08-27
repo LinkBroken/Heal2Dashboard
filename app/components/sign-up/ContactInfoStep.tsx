@@ -58,7 +58,7 @@ export default function ContactInfoStep() {
 
     handleFieldChange("phone", digits);
 
-    setIsPhoneNumbeValid(digits.length >= 6 && digits.length <= 15);
+    setIsPhoneNumbeValid(digits.length > 0);
   };
 
   return (
@@ -137,10 +137,6 @@ export default function ContactInfoStep() {
                 "& .MuiInputLabel-root.Mui-focused": {
                   color: "#667eea",
                 },
-              }}
-              inputProps={{
-                minLength: 6,
-                maxLength: 15,
               }}
             />
           </Grid>

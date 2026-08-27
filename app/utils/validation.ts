@@ -17,8 +17,7 @@ export const passwordSchema = z
 
 export const phoneSchema = z
   .string()
-  .min(6, "Phone number must be at least 6 digits")
-  .max(15, "Phone number cannot exceed 15 digits")
+  .min(1, "Phone number is required")
   .regex(/^\d+$/, "Phone number can only contain digits");
 
 export const dateOfBirthSchema = z.string().refine((date) => {
